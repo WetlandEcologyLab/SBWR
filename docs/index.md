@@ -1,7 +1,6 @@
 ---
-Seed-Based Wetland Restoration Model
+# Seed-Based Wetland Restoration Model
+# 
+
+layout: home
 ---
-
-A product of the Utah State University Wetland Ecology Lab.
-
-Coming soon!
