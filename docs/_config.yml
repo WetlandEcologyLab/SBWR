@@ -41,12 +41,9 @@ defaults:
   -
     scope:
       path: "" # empty here means all files in the project will be included
-      #type: docs
-    values: # front matter default values
+    values: 
       layout: default
-      #sidebar: 
-        #nav: "docs"
-    
+
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
 # to override the default setting.

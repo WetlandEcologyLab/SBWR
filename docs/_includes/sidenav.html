@@ -1,4 +1,9 @@
 <div class="title-bar">
+	<div class="title-bar-title"><i class="fa fa-file-text"></i> Page Contents</div>		
+</div>
+<div id="toc"></div>
+
+<div class="title-bar">
 	<div class="title-bar-title"><i class="fa fa-sitemap"></i> Site Contents
 		<div id="menuCtls" class="button-group tiny show-for-medium">
 				<span id="expand" class="button primary fa fa-plus has-tip top" data-tooltip title="Expand all items" aria-haspopup="true" data-disable-hover="false" ></span>
@@ -6,14 +11,15 @@
 			</div>	
 	</div>
 </div>
-<div id="sidenav">
+ <div id="sidenav">
+	{% capture html %}
 
 	{% assign entries = site.pages | sort: "path" %}
 	<ul id='HTMLOnlyNav'>
-	{% for entry in site.data.navigation %}
-		{{ entry.url | split: "/"   | last                       }}{% endcapture %}
-		{{ entry.url | remove: slug | remove: "//" | append: "/" }}{% endcapture %}
-		<li><a href='{{ site.baseurl }}{{ entry.url }}'>{{ entry.name }}</a></li>
+	{% for entry in entries %}
+		{% capture slug    %}{{ entry.url | split: "/"   | last                       }}{% endcapture %}
+		{% capture current %}{{ entry.url | remove: slug | remove: "//" | append: "/" }}{% endcapture %}
+		<li><a href='{{ site.baseurl }}{{ entry.url }}'>{{entry.title}}</a></li>
 	{% endfor %}
 	</ul>
 
