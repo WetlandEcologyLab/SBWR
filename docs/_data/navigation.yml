@@ -4,17 +4,18 @@
 - name: About
   link: SBWR/About.html
 - name: Model Scenarios
-  link: SBWR/scenarios/
   children: 
-  - name: Dry Early Seeding Scenario
-    link: SBWR/scenarios/DryEarlySeeding.html
-   - name: Wet Early Seeding Scenario
-     link: SBWR/scenarios/WetEarlySeeding.html
-   - name: Dry Late Seeding Scenario
-     link: SBWR/scenarios/DryLateSeeding.html
-   - name: Wet Late Seeding Scenario
-     link: SBWR/scenarios/WetLateSeeding.html
-   - name: Dry Climate Change Scenario
-     link: SBWR/scenarios/DryClimateScenario.html
-   - name: Wet Climate Change Scenario
-     link: SBWR/scenarios/WetClimateScenario.html
+    - name: Model Scenarios
+      link: SBWR/scenarios/
+    - name: Dry Early Seeding Scenario
+     link: SBWR/scenarios/DryEarlySeeding.html
+    - name: Wet Early Seeding Scenario
+      link: SBWR/scenarios/WetEarlySeeding.html
+    - name: Dry Late Seeding Scenario
+      link: SBWR/scenarios/DryLateSeeding.html
+    - name: Wet Late Seeding Scenario
+      link: SBWR/scenarios/WetLateSeeding.html
+    - name: Dry Climate Change Scenario
+      link: SBWR/scenarios/DryClimateScenario.html
+    - name: Wet Climate Change Scenario
+      link: SBWR/scenarios/WetClimateScenario.html
