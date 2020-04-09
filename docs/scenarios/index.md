@@ -1,5 +1,6 @@
 ---
-title: "Model Scenarios"
+title: Model Scenarios
+layout: default
 ---
 
 ## The Data
