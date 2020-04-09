@@ -25,9 +25,9 @@ For each scenario, the model outputs include estimated end-of-season cover for e
 
 Outputs for each scenario can be found at the links below:
 
-- [dry early seeding]({{ site.baseurl }}/DryEarlySeeding)
-- [wet early seeding]({{ site.baseurl }}/WetEarlySeeding)
-- [dry late seeding]({{ site.baseurl }}/DryLateSeeding)
-- [wet late seeding]({{ site.baseurl }}/WetLateSeeding)
-- [dry climate change scenario]({{ site.baseurl }}/DryClimateScenario)
-- [wet climate change scenario]({{ site.baseurl }}/WetClimateScenario)
+- [dry early seeding]({{ site.baseurl }}/SBWR/DryEarlySeeding)
+- [wet early seeding]({{ site.baseurl }}/SBWR/WetEarlySeeding)
+- [dry late seeding]({{ site.baseurl }}/SBWR/DryLateSeeding)
+- [wet late seeding]({{ site.baseurl }}/SBWR/WetLateSeeding)
+- [dry climate change scenario]({{ site.baseurl }}/SBWR/DryClimateScenario)
+- [wet climate change scenario]({{ site.baseurl }}/SBWR/WetClimateScenario)
