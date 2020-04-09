@@ -23,10 +23,10 @@ title: Seed-Based Wetland Restoration
 # Site description will show up in Google Search results and in feed.xml site description
 description: Restoration outcomes for seed-based wetland restoration scenarios based on environmental variables, restoration species, and source populations. In development by the USU Wetland Ecology Lab.
 
-baseurl: "" # the subpath of your site, e.g. /blog
+baseurl: "/SBWR" # the subpath of your site, e.g. /blog
 #url: "http://karinkettenring.com" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb
-github_username:  mhallerud
+#github_username:  mhallerud
 
 # Build settings
 markdown: kramdown # markdown style
@@ -41,7 +41,7 @@ defaults:
     scope:
       path: "" # empty here means all files in the project will be included
     values: 
-      layout: "default"
+      layout: default
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
