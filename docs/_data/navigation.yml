@@ -1,16 +1,16 @@
 - name: Home
   link: /
 - name: Model Scenarios
-  link: SBWR/scenarios/
+  link: /scenarios.html
 - name: Dry Early Seeding Scenario
-  link: SBWR/scenarios/DryEarlySeeding.html
+  link: /scenarios/DryEarlySeeding.html
 - name: Wet Early Seeding Scenario
-  link: SBWR/scenarios/WetEarlySeeding.html
+  link: /scenarios/WetEarlySeeding.html
 - name: Dry Late Seeding Scenario
-  link: SBWR/scenarios/DryLateSeeding.html
+  link: /scenarios/DryLateSeeding.html
 - name: Wet Late Seeding Scenario
-  link: SBWR/scenarios/WetLateSeeding.html
+  link: /scenarios/WetLateSeeding.html
 - name: Dry Climate Change Scenario
-  link: SBWR/scenarios/DryClimateScenario.html
+  link: /scenarios/DryClimateScenario.html
 - name: Wet Climate Change Scenario
-  link: SBWR/scenarios/WetClimateScenario.html
+  link: /scenarios/WetClimateScenario.html
