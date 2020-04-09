@@ -33,13 +33,11 @@
 
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        {% include navigation.html %}
-        {{ content }}
-      </section>
-    </div>
     <div id="sidebar" class="large-4 columns large-pull-8">
         {% include sidenav.html %}
+      <section id="main_content" class="inner">
+        {{ content }}
+      </section>
     </div>
 
     <!-- FOOTER  -->
