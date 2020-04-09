@@ -1,7 +1,7 @@
 ---
 layout: home
 title: About
-permalink: /About/
+permalink: /about/
 ---
 
 This is the in-progress website for the seed-based wetland restoration model by Utah State University's Wetland Ecology Lab.
