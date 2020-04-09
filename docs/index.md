@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: home
 title: Seed-Based Wetland Restoration Model
 ---
 
