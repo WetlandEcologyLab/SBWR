@@ -2,13 +2,13 @@
 - name: Home
   link: SBWR/
 - name: About
-  link: SBWR/About.html
+  link: SBWR/about.html
 - name: Model Scenarios
   children: 
     - name: Model Scenarios
       link: SBWR/scenarios/
     - name: Dry Early Seeding Scenario
-     link: SBWR/scenarios/DryEarlySeeding.html
+      link: SBWR/scenarios/DryEarlySeeding.html
     - name: Wet Early Seeding Scenario
       link: SBWR/scenarios/WetEarlySeeding.html
     - name: Dry Late Seeding Scenario
