@@ -14,8 +14,9 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-# Site title will be used everywhere on site
+# Site title and abbreviation will be used everywhere on site
 title: Seed-Based Wetland Restoration
+abbrev: SBWR
 
 # Not sure if we want to set a public email?
 #email: maggie.hallerud@aggiemail.usu.edu 
@@ -26,7 +27,7 @@ description: Restoration outcomes for seed-based wetland restoration scenarios b
 baseurl: "/SBWR" # the subpath of your site, e.g. /blog
 #url: "http://karinkettenring.com" # the base hostname & protocol for your site, e.g. http://example.com
 #twitter_username: jekyllrb
-#github_username:  mhallerud
+github_username:  mhallerud
 
 # Build settings
 markdown: kramdown # markdown style
