@@ -1,18 +1,14 @@
 ---
-layout: page
+layout: home
 title: About
 permalink: /about/
 ---
 
-This is the base Jekyll theme. You can find out more info about customizing your Jekyll theme, as well as basic Jekyll usage documentation at [jekyllrb.com](https://jekyllrb.com/)
+This is the in-progress website for the seed-based wetland restoration model by Utah State University's Wetland Ecology Lab.
 
-You can find the source code for Minima at GitHub:
-[jekyll][jekyll-organization] /
-[minima](https://github.com/jekyll/minima)
+This site is **still in development** and ****no outputs on this website are based on real data yet!!!****
 
-You can find the source code for Jekyll at GitHub:
-[jekyll][jekyll-organization] /
-[jekyll](https://github.com/jekyll/jekyll)
+To explore:
 
-
-[jekyll-organization]: https://github.com/jekyll
+- [Home]({{ site.baseurl }}/)
+- [Scenarios]({{ site.baseurl }}/scenarios)
