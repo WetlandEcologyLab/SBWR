@@ -32,14 +32,15 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section1 id="sidebar" class=outer">
-        {% include sidenav.html %}
-      </section1>
-      <section2 id="main_content" class="inner">
+    <main role="main" id="main">
+      <div id="sidebar" class="docs-container">
+        <div class="docs-sidebar">
+           {% include sidenav.html %}
+        </div>
+      <div id="main_content" class="docs-content">
         {{ content }}
-      </section2>
-    </div>
+      </div>
+    </main>
 
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">

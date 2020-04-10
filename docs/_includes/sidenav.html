@@ -1,13 +1,8 @@
-<div class="title-bar">
-	<div class="title-bar-title"><i class="fa fa-file-text"></i> Page Contents</div>		
-</div>
-<div id="toc"></div>
-
 <div id="sidenav">
 	{% capture html %}
 
 	{% assign entries = site.pages | sort: "path" %}
-	<ul id='HTMLOnlyNav'>
+	<ul id='HTMLOnlyNav' class="list-unstyled ct-sidenav-list">
 	{% for entry in entries %}
 		{% capture slug    %}{{ entry.url | split: "/"   | last                       }}{% endcapture %}
 		{% capture current %}{{ entry.url | remove: slug | remove: "//" | append: "/" }}{% endcapture %}
