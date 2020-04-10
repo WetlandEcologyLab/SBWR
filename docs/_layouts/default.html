@@ -5,7 +5,7 @@
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,maximum-scale=2">
-    
+    <title class="outer">{{ page.title }}</title>
     <link rel="stylesheet" type="text/css" media="screen" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
 
 {% seo %}
@@ -20,7 +20,7 @@
             <a id="forkme_banner" href="{{ site.github.repository_url }}">View on GitHub</a>
           {% endif %}
 
-          <h1 id="project_abbrev">{{ site.abbrev | default: site.github.repository_name }}</h1>
+          <h1 id="project_abbrev" class="inner>{{ site.abbrev | default: site.github.repository_name }}</h1>
 
           {% if site.show_downloads %}
             <section id="downloads">
@@ -32,16 +32,14 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <main role="main" id="main">
-      <div id="sidebar" class="docs-container">
-        <div class="docs-sidebar">
-           {% include sidenav.html %}
-        </div>
+    <div id="sidebar" class="sidenav">
+      <div class="docs-sidebar">
+        {% include sidenav.html %}
       </div>
-      <div id="main_content" class="docs-content">
+    </div>
+    <div id="main_content" class="docs-content">
         {{ content }}
-      </div>
-    </main>
+    </div>
 
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
