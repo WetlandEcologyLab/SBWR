@@ -1,14 +1,7 @@
 <div id="sidenav">
-	{% capture html %}
-
-	{% assign entries = site.pages | sort: "path" %}
-	<ul id='HTMLOnlyNav' class="list-unstyled ct-sidenav-list">
-	{% for entry in entries %}
-		{% capture slug    %}{{ entry.url | split: "/"   | last                       }}{% endcapture %}
-		{% capture current %}{{ entry.url | remove: slug | remove: "//" | append: "/" }}{% endcapture %}
-		<li><a href='{{ site.baseurl }}{{ entry.url }}'>{{entry.name}}</a></li>
+	<ul id='HTMLOnlyNav' style="list-style-type:none;">
+	{% for entry in site.data.navigation %}
+		<li><a href='{{ site.baseurl }}{{ entry.link }}'>{{entry.name}}</a></li>
 	{% endfor %}
 	</ul>
-
-	{% endcapture %}{{ html | strip_newlines | replace:'    ','' | replace:'    ','' | replace:'  ',' ' }}
 </div>
