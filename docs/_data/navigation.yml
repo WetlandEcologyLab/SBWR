@@ -1,7 +1,7 @@
 - name: Home
   link: /
 - name: Model Scenarios
-  link: /scenarios.html
+  link: /scenarios/
 - name: Dry Early Seeding Scenario
   link: /scenarios/DryEarlySeeding.html
 - name: Wet Early Seeding Scenario
