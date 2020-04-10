@@ -33,13 +33,15 @@
 
     <!-- MAIN CONTENT -->
     <div id="sidebar" class="sidenav">
-    <link rel="stylesheet" href="assets/css/styles.css">
-      <div class="docs-sidebar">
+      <section id="sidenav" class="docs-sidebar">
         {% include sidenav.html %}
-      </div>
+      </section>
     </div>
-    <div id="main_content" class="inner">
+
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
         {{ content }}
+      </section>
     </div>
 
     <!-- FOOTER  -->
