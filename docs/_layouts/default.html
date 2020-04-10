@@ -32,10 +32,9 @@
     </div>
 
     <!-- MAIN CONTENT -->
-    <div id="menu" class="outer">
-      {% include sidenav.html %}
-    </div>
     <div id="main_content_wrap" class="outer">
+      <div id="sidebar" class="large-4 columns large-pull-8">
+        {% include sidenav.html %}
       <section id="main_content" class="inner">
         {{ content }}
       </section>
