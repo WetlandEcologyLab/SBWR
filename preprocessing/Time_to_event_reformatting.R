@@ -1,46 +1,76 @@
+##############################################
+## Reformats germination/mortality data in  ##
+## long format to short tabular format with ##
+## one date-count record per line           ##
+##############################################
+
+# load dependencies
 library(timeDate)
 
-# GERMINATION DATA REFORMATTING
-file <- 'C:/Users/Maggie/Documents/WetlandEcology/2020_01_29_Trial3_Germination.csv'
+####################################
+## Run time to event reformatting ##
+####################################
+in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/2020_01_29_Trial3_Germination.csv'
+out_file <- 'C:/Users/Maggie/Documents/WetlandEcology/Trial3_GermData_HTT.csv'
+reformat_TTE_data(in_file, out_file)
 
-reformat_germination_data <- function(file, trial_no){
+##############
+## FUNCTION ##
+##############
+reformat_TTE_data <- function(in_file, out_file){
   #NOTE: ASSUMES THAT THE FIRST ENTRY FOR EACH CUP NUMBER HAS THE APPROPRIATE 
-  #SPECIES, SOURCE, TEMP, WP, AND GERMINATION DATA ASSOCIATED. IN EFFECT ALSO    
-  #ASSUMES ONLY ONE ENTRY PER CUP NUMBER.
-  #param file: file name for germination data
-  #param trial_no: unique trial number to be associated with data
+  #SPECIES, SOURCE, TEMP, WP, AND GERMINATION DATA ASSOCIATED. 
+  # Checks for unique entries per cup
+  #param in_file: filepath for formatted input germination data
+  #param out_fle: filepath for formatted output reformatted time-to-event germination data
   #returns germination data formatted in time-to-event style for HTT model entry
   
   # read in original dataset and set standard names
-  germ_original <- read.csv(file, header=T)
-  # set trial number field
-  germ_original$Trial[1:length(germ_original[,1])] <- trial_no
+  germ_original <- read.csv(file, header=T, stringsAsFactors = F)
+  
   # rename columns
   ncols = ncol(germ_original)
-  names(germ_original)[1:5] <- c("CupNo", "Species", "Source", "WP", "Temp")
-  names(germ_original)[(ncols-4):ncols] <- c("Dead", "NoGermDate", "TotalGerm", "NoSown", "Trial")
+  names(germ_original)[1:6] <- c("Trial", "CupNo", "Species", "Source", "WP", "Temp")
+  names(germ_original)[(ncols-1):ncols] <- c("NoGermDate", "NoSown")
+
   # remove any empty rows
   for (i in 1:length(germ_original[,1])){
     if(is.na(germ_original$CupNo[i])) germ_original <- germ_original[-i,]
   }
-  # rename date fields based on timestep
-  first_time_col <- 6
-  last_time_col <- ncols-5
-  for (i in 1:(last_time_col-first_time_col+1)){
-    field_name <- paste("Time", as.character(i*2), sep="")
-    names(germ_original)[i+5] <- field_name
-  }
+  
+  # Check that there are no repeat cup numbers
+  if(length(unique(germ_original$CupNo)) != length(germ_original$CupNo))
+  {stop("ERROR! Cup numbers are not unique. Double check cup numbers in input file.")}
+
+  # Check that all cup numbers are represented
+  tysp_numbers <- c(34, 76, 120, 144, 207, 221)
+  cup_numbers <- germ_original$CupNo
+  for (i in 1:234){
+    if (! i %in% cup_numbers){
+      if (i %in% c(34, 76, 120, 144, 207, 221))
+      {print(paste("WARNING: Cup number is missing from data set: #", as.character(i), "- Typha cup"))}
+      else {print(paste("WARNING: Cup number is missing from data set: #", as.character(i)))}
+    }#close if
+  }#close for loop
+    
   # set data types for each field
   germ_original$CupNo <- as.factor(germ_original$CupNo)
   germ_original$Species <- as.factor(germ_original$Species)
   germ_original$Source <- as.factor(germ_original$Source)
   germ_original$WP <- as.factor(germ_original$WP)
-  germ_original$Temp <- as.factor(germ_original$Temp)
-  germ_original$Dead <- as.numeric(germ_original$Dead)
+  germ_original$Temp <- as.integer(germ_original$Temp)
   germ_original$NoGermDate <- as.numeric(germ_original$NoGermDate)
-  germ_original$TotalGerm <- as.numeric(germ_original$TotalGerm)
   germ_original$NoSown <- as.numeric(germ_original$NoSown)
   germ_original$Trial <- as.factor(germ_original$Trial)
+  
+  # rename date fields based on timestep
+  first_time_col <- 7
+  last_time_col <- ncols-2
+  for (i in 1:(last_time_col-first_time_col+1)){
+    field_name <- paste("Time", as.character(i*2), sep="")
+    names(germ_original)[i+6] <- field_name
+    suppressWarnings(germ_original[,i+6] <- as.numeric(germ_original[,i+6]))
+  }
 
   # find the timeframe
   timesteps <- (last_time_col - first_time_col)
@@ -51,10 +81,15 @@ reformat_germination_data <- function(file, trial_no){
   new_germ_df$BeginTime <- rep(seq(0, timesteps*2, by=2), 234)
   new_germ_df$EndTime <- rep(seq(2, (timesteps*2)+2, by=2), 234)
   new_germ_df$EndTime[which(new_germ_df$EndTime==(timesteps*2)+2)] <- Inf
-  # set trial number
-  new_germ_df$Trial <- trial_no
+
+  # calculate total germinations
+  for (i in 1:nrow(germ)){
+    germ_numeric <- gsub("END", "", germ[i,first_time_col:last_time_col])
+    suppressWarnings(germ_numeric <- as.numeric(germ_numeric))
+    germ$TotalGerm[i] <- sum(germ_numeric,na.rm=T) + germ$NoGermDate[i]
+  }#end for loop
   
-  # set fields attached to cup numbers
+  # copy over fields attached to cup numbers
   for (i in 1:234){
     # get entry for cup number from original data frame
     cup_data <- germ_original[which(germ_original$CupNo==i),]
@@ -145,11 +180,10 @@ reformat_germination_data <- function(file, trial_no){
   new_germ_df$PropGerm <- as.numeric(new_germ_df$PropGerm)
   new_germ_df$CumPropGerm <- as.numeric(new_germ_df$CumPropGerm)
   
-return(new_germ_df)
-} # end of function
+  # save new data frame to specified output file
+  write.csv(new_germ_df, out_file)
   
-
-HT_germ_data_trial3 <- reformat_germination_data(file, 3)
-
-View(HT_germ_data_trial3)
-write.csv(HT_germ_data_trial3, "C:/Users/Maggie/Documents/WetlandEcology/HTT_germ_data_trial3.csv")
+# if you want the function to also return the data frame,
+# foer example for troubleshooting, uncomment the following line:
+  #return(new_germ_df) 
+} # end of function
