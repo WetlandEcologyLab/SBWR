@@ -154,9 +154,9 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   ## rep effect on germination - hierarchical
   #for (rep in 1:2)   { 
-  #  beta9[rep] ~ dnorm(0, nu[3]) 
+  #  beta8[rep] ~ dnorm(0, nu[3]) 
   #}
-  #beta9[3] <- sum(beta9[1:2]) # sum-to-zero constraint
+  #beta8[3] <- sum(beta8[1:2]) # sum-to-zero constraint
 
   ## days effect - fixed linear - slightly constrained
   beta9 ~ dnorm(0, 0.01)
@@ -166,7 +166,7 @@ textConnection("model{ # has the same effect as writing all this in a separate t
   ##############################################
   nu[1] ~ dgamma(0.01, 0.01)
   nu[2] ~ dgamma(0.01, 0.01)
-  nu[3] ~ dgamma(0.01, 0.01)
+  #nu[3] ~ dgamma(0.01, 0.01)
 
 }")#end model block
 
@@ -246,7 +246,7 @@ plot(samples_coda)
 
 #### JAGS FORMAT ####
 # save data as appropriate list
-germData <- list(germ=germination_matrix[,5:10], 
+germData <- list(germ=germination_matrix[,1:34], 
                      species=as.integer(as.factor(germination_matrix$Species)),
                      source=as.integer(as.factor(germination_matrix$Source)), 
                      seedmass=germination_matrix$SeedMass, 
@@ -259,7 +259,7 @@ germData <- list(germ=germination_matrix[,5:10],
                      NSpecies = length(unique(germination_matrix$Species)), 
                      NSources = length(unique(germination_matrix$Source)),
                      NCups = length(unique(germination_matrix$CupNo)),
-                     NTimes = 5,
+                     NTimes = 34,
                      NChambers = length(unique(germination_matrix$Chamber)))
                     # use if in long format:
                     #days=as.numeric(as.factor(germination_matrix$)))
@@ -268,7 +268,7 @@ germData <- list(germ=germination_matrix[,5:10],
 germModel <- jags.model(file=SownSurv, data=germData, n.chains = 3)#adapt=500
 ## Run model
 update(germModel, n.iter=1000)
-out_model26<- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta9", "kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "mu1", "mu2", "eps1", "eps2", "nu"), thin=1, n.iter = 1000)
+out_model27<- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta9", "kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "eps1", "eps2", "nu"), thin=1, n.iter = 10000)
 
 #### Assess convergence - save to PDF (R plot console runs out of space) ####
 ## Check out convergence plots
@@ -775,12 +775,31 @@ beta2_cols <- seq(35+source, 225, 38)
 beta3_cols <- seq(225+wp, 235, 2)
 beta4_cols <- seq(235+temp, 250, 3)
 seedmass <- mean(seedmass_csv$AvgSeedMass[which(seedmass_csv$Site==source_name)])
-beta6_cols <- sample(
+cups <- sample(1:germData$NCups, NSown, replace=TRUE)
+chambers <- sample(1:germData$NChambers, NSown, replace=TRUE)
+reps <- sample(1:3, NSown, replace=TRUE)
 
-# simulate by timesteps
-for (t in 1:germData$NTimes){
+# set up matrix to hold transition probabilities
+prob_sown <- matrix(NA, nrow=NSown, ncol=NTimes)
   
+# simulate by timesteps for each individual
+for (i in 1:NSown){
+  for (t in 1:germData$NTimes){
+    beta1 <- coeff_matrix[i,beta1_cols[t]]
+    beta2 <- coeff_matrix[i,beta2_cols[t]]
+    beta3 <- coeff_matrix[i,beta3_cols[t]]
+    beta4 <- coeff_matrix[i,beta4_cols[t]]
+    beta5 <- coeff_matrix[i,251]*seedmass
+    beta6 <- coeff_matrix[i,cups[i]]
+    beta7 <- coeff_matrix[i,chambers[i]]
+    beta8 <- coeff_matrix[i,reps[i]]
+    beta9 <- coeff_matrix[i,(t-1)*2]
+    linear <- beta1 + beta2 + beta3 + beta4 + beta5 + beta6 + beta7 + beta8 + beta9
+    prob_sown <- exp(linear) / (1+exp(linear))
+  }
 }
+
+# multiply transition probabilities through time...
 
 ########################
 ### CROSS-VALIDATION ###
