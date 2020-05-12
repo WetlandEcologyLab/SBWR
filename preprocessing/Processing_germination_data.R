@@ -1,6 +1,11 @@
 ##########################################################################
 ##   PROCESSES GERMINATION DATA                                         ##
 ## Adds germ synchrony, mean germ time, and germination proportion      ##
+## NOTE: Germ synchrony and mean germ time assign seedlings an assumed  ##
+## *median* germ date = the day prior to when they are marked           ##
+## germinated (i.e., the germination date is the "odd" day between      ##
+## data collection days). For example if the marked germ date is 12/14, ##
+## this is analyzed as 12/13.                                           ##
 ##########################################################################
 
 
@@ -12,16 +17,20 @@ library(dplyr)
 library(GerminaR)
 
 # set file paths - must be CSV
-in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/Seedling_Trial_2_Germinations.csv'
-out_file <- 'C:/Users/Maggie/Documents/WetlandEcology/Trial2_Processed_GermData.csv'
-process_germ_data(in_file, out_file)
+in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/Trial3_Germination_Checked.csv'
 
+# run function
+new_germ_data <- process_germ_data(in_file)
 
+# clean up data frame then save
+View(new_germ_data)
+head(germ)
+write.csv(new_germ_data, 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/Trial3_Germination_FINAL.csv')
 
 ##############
 ## Function ##
 ##############
-process_germ_data <- function(in_file, out_fle){
+process_germ_data <- function(in_file){
   # read in file
   germ <- read.csv(in_file,header=T,stringsAsFactors = F)
 
@@ -32,7 +41,7 @@ process_germ_data <- function(in_file, out_fle){
   names(germ)[(ncols-1):ncols] <- c("NoGermDate", "NoSown")
   
   # set data types for each field
-  germ$CupNo <- as.factor(germ$CupNo)
+  germ$CupNo <- as.integer(germ$CupNo)
   germ$Species <- as.factor(germ$Species)
   germ$Source <- as.factor(germ$Source)
   germ$WP <- as.factor(germ$WP)
@@ -56,8 +65,8 @@ process_germ_data <- function(in_file, out_fle){
   for (i in 1:234){
     if (! i %in% cup_numbers){
       if (i %in% c(34, 76, 120, 144, 207, 221))
-      {warning(paste("WARNING: Cup number is missing from data set: #", as.character(i), "- Typha cup"))}
-      else {warning(paste("WARNING: Cup number is missing from data set: #", as.character(i)))}
+      {print(paste("WARNING: Cup number is missing from data set: #", as.character(i), "- Typha cup"))}
+      else {print(paste("WARNING: Cup number is missing from data set: #", as.character(i)))}
     }#close if
   }#close for loop
   
@@ -80,7 +89,7 @@ process_germ_data <- function(in_file, out_fle){
   }#end for loop
   
   # calculate mean germination rate
-  germ$GRP <- germ$TotalGerm / germ$NoSown
+  germ$GermProportion <- germ$TotalGerm / germ$NoSown
   
   # calculate germination synchrony
   for (i in 1:nrow(germ)){
@@ -106,6 +115,8 @@ process_germ_data <- function(in_file, out_fle){
   germ_days[is.na(germ_days)] <- 0 #set NAs to zero
   # matrix math: # of germinations multiplied by germination day, all summed together per cup
   sum_days <- germ_days %*% multipliers
-  germ$MeanGermTime <- sum_days / germ$TotalGerm
+  germ$MeanGermDay <- sum_days / germ$TotalGerm
 
+  # return dataframe
+  return(germ)
 }#end function

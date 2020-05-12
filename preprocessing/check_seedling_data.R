@@ -6,22 +6,29 @@
 library(pracma)
 
 # specify file paths
-in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/2020_01_29_Trial3_Germination.csv'
-lookup_file <- 'C:/Users/Maggie/Documents/WetlandEcology/Seedling_Lookup_Table_CupNos.csv'
-checked_file <-'C:/Users/Maggie/Documents/WetlandEcology/Trial3_Germination_Checked.csv'
-
-# Run cup numbers check
-## Note: This functino assummes field names of 'Species', 'Source', 'CupNo', 'WP', and 'Temp'. It also assumes that 'Temp' is numeric 1-3 and 'WP' is numeric 1-2.
-## Any blank or NA values in the in_file will cause this function to fail.
-check_cup_numbers(in_file, lookup_file)
-## Once any discrepancies are fixed within the in_file, proceed...
+in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/ModelData/Processed_CSVs/Trial3_Germination_Processed.csv'
+lookup_file <- 'C:/Users/Maggie/Documents/WetlandEcology/ModelData/Processed_CSVs/Seedling_Lookup_Table_CupNos.csv'
+checked_file <-'C:/Users/Maggie/Documents/WetlandEcology/ModelData/Processed_CSVs/Trial3_Germination_Checked.csv'
 
 # Run species and source categories check
 ## NOTE: This function assumes field names of 'Species','Source','WP', and 'Temp'
 ## It also assumes that 'WP' and 'Temp' are in numeric format
-sources_checked <- check_species_source(in_file)
+sources_checked <- check_field_values(in_file)
 # make corrections as needed and rerun until no warnings show...
+sources_checked$Source[141] <- 'THNA'
+sources_checked[177,]
+sources_checked$Source[177] <- 'FISP2'
+sources_checked[179,]
+sources_checked$Source[179] <- 'NIPI'
+names(sources_checked) <- c("Trial", "CupNo", "Species", "Source", "WP", "Temp", "10/6/2019", "10/8/2019", "10/10/2019", "10/12/2019", "10/14/2019", "10/16/2019", "10/18/2019", "10/20/2019", "10/22/2019", "10/24/2019", "10/26/2019", "10/28/2019", "10/30/2019", "11/1/2019", "11/3/2019", "11/5/2019", "11/7/2019", "11/9/2019", "11/11/2019", "11/13/2019", "11/15/2019", "11/17/2019", "11/19/2019", "11/21/2019", "11/23/2019", "11/25/2019", "11/27/2019", "11/29/2019", "12/1/2019", "12/3/2019", "12/5/2019", "12/7/2019", "12/9/2019", "12/11/2019", "12/13/2019", "12/14/2019", "12/16/2019", "NoGermDate", "NoSown")
 write.csv(sources_checked, checked_file)
+
+# Run cup numbers check
+## Note: This function assummes field names of 'Species', 'Source', 'CupNo', 'WP', and 'Temp'. It also assumes that 'Temp' is numeric 1-3 and 'WP' is numeric 1-2.
+## Any blank or NA values in the in_file will cause this function to fail.
+## Sources should already be corrected via check_field values before running this.
+check_cup_numbers(checked_file, lookup_file)
+## Once any discrepancies are fixed within the in_file, proceed...
 
 
 #############################
@@ -48,12 +55,12 @@ check_field_values <- function(in_file){
   # check species
   for (i in 1:length(data$Species)){
     if(! data$Species[i] %in% known_species){
-      print(paste("Species not in defined species: row ", as.character(i), " = '", data$Species[i]), "'")
+      print(paste("Species not in defined species: row ", as.character(i), " = '", data$Species[i], "'"))
     }# end of if
   }# end of for loop
   
   # remove "-" in any source names
-  data$Source <- gsub("-", "", data$Source)
+  for(i in 1:nrow(data)) data$Source <- gsub("-", "", data$Source)
   
   # rename sources for each species
   for (i in 1:nrow(data)){
@@ -161,3 +168,4 @@ check_cup_numbers <- function(data_file, lookup_file){
     if (data$WP[i]!=lookup$WP) print(paste("WP doesn't match for row", as.character(i)))
   }#end for loop
 } #end function
+

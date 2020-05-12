@@ -10,14 +10,14 @@ library(timeDate)
 ####################################
 ## Run time to event reformatting ##
 ####################################
-in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/2020_01_29_Trial3_Germination.csv'
-out_file <- 'C:/Users/Maggie/Documents/WetlandEcology/Trial3_GermData_HTT.csv'
-reformat_TTE_data(in_file, out_file)
+in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/TestSeedlingData_Trial3Germ_17Apr2020.csv'
+out_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/TimeToEventGermination_Trial3_21Apr20.csv'
+reformat_germ_TTE_data(in_file, out_file)
 
 ##############
 ## FUNCTION ##
 ##############
-reformat_TTE_data <- function(in_file, out_file){
+reformat_germ_TTE_data <- function(in_file, out_file){
   #NOTE: ASSUMES THAT THE FIRST ENTRY FOR EACH CUP NUMBER HAS THE APPROPRIATE 
   #SPECIES, SOURCE, TEMP, WP, AND GERMINATION DATA ASSOCIATED. 
   # Checks for unique entries per cup
@@ -26,7 +26,7 @@ reformat_TTE_data <- function(in_file, out_file){
   #returns germination data formatted in time-to-event style for HTT model entry
   
   # read in original dataset and set standard names
-  germ_original <- read.csv(file, header=T, stringsAsFactors = F)
+  germ_original <- read.csv(in_file, header=T, stringsAsFactors = F)
   
   # rename columns
   ncols = ncol(germ_original)
