@@ -1,16 +1,20 @@
+- name: About
+  link: /about/
 - name: Home
   link: /
 - name: Model Scenarios
   link: /scenarios/
-- name: Dry Early Seeding Scenario
-  link: /scenarios/DryEarlySeeding.html
-- name: Wet Early Seeding Scenario
-  link: /scenarios/WetEarlySeeding.html
-- name: Dry Late Seeding Scenario
-  link: /scenarios/DryLateSeeding.html
-- name: Wet Late Seeding Scenario
-  link: /scenarios/WetLateSeeding.html
-- name: Dry Climate Change Scenario
-  link: /scenarios/DryClimateScenario.html
-- name: Wet Climate Change Scenario
-  link: /scenarios/WetClimateScenario.html
+#- name: Dry Early Seeding Scenario
+#  link: /scenarios/DryEarlySeeding.html
+#- name: Wet Early Seeding Scenario
+#  link: /scenarios/WetEarlySeeding.html
+#- name: Dry Late Seeding Scenario
+#  link: /scenarios/DryLateSeeding.html
+#- name: Wet Late Seeding Scenario
+#  link: /scenarios/WetLateSeeding.html
+#- name: Dry Climate Change Scenario
+#  link: /scenarios/DryClimateScenario.html
+#- name: Wet Climate Change Scenario
+#  link: /scenarios/WetClimateScenario.html
+- name: Model Specifications
+  link: /ModelSpecs/
