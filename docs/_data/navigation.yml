@@ -16,7 +16,7 @@
 #  link: /scenarios/DryClimateScenario.html
 #- name: Wet Climate Change Scenario
 #  link: /scenarios/WetClimateScenario.html
-- name: The Model
+- name: Model Specifications
   link: /model/
-- name: The Data
+- name: Data Collection
   link: /data/
