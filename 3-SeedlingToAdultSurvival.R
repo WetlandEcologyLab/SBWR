@@ -187,6 +187,8 @@ SeedSurv <- textConnection("model{ # has the same effect as writing all this in 
   rho19 <- seedling_pca$rotation[19,1] + seedling_pca$rotation[19,2] + seedling_pca$rotation[19,3] + seedling_pca$rotation[19,4]
   rho20 <- seedling_pca$rotation[20,1] + seedling_pca$rotation[20,2] + seedling_pca$rotation[20,3] + seedling_pca$rotation[20,4]
                            
-                           
-                           }")
+}")
 
+#################
+### RUN MODEL ###
+#################

@@ -35,7 +35,7 @@ textConnection("model{ # has the same effect as writing all this in a separate t
       ## Define linear model
       ##NOTE: beta9 defined by ((t-1)*2) because timesteps start at 0 (t-1)
       ## and proceed by intervals of 2
-      sown_linear[i,t] <- beta1[species[i],t]+ beta2[source[i],t]+ beta3[wp[i],t] + beta4[temp[i],t] + beta5*seedmass[i] + beta6[cup[i]] + beta7[chamber[i]] + beta9*((t-1)*2)
+      sown_linear[i,t] <- beta1[species[i],t]+ beta2[source[i],t]+ beta3[wp[i],t] + beta4[temp[i],t] + beta5*seedmass[i] + beta6[cup[i]] + beta7[chamber[i]] + beta9*((t*2)-1)
       # + beta8[rep[i]]
     
     ## Transformation to logit scale for logistic regression
@@ -270,7 +270,7 @@ germData <- list(germ=germination_matrix[,5:10],
 germModel <- jags.model(file=SownSurv, data=germData, n.chains = 3)#adapt=500
 ## Run model
 update(germModel, n.iter=1000)
-out_model28 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta9", "kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter = 3000)
+out_model28 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta9", "kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter = 1000)
 
 #### Assess convergence - save to PDF (R plot console runs out of space) ####
 ## Check out convergence plots
@@ -977,6 +977,7 @@ residual_plot(predicted=full$Predicted,actual=full$Actual)
 #############################
 ### SIMULATING POPULATION ###
 #############################
+#### Individual level ####
 # set input values based on factor levels
 species <- 2 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
 source <- 10 # options restricted by species
@@ -1028,10 +1029,68 @@ for (i in 1:NSown){
 germ <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
 for (i in 1:NSown){
   germ[i,1] <- rbinom(n=1, size=1, prob=prob_sown[i,1])
-  for (t in 2:germData$NTimes){
+  for (t in 2:34){
     ifelse (germ[i,t-1]==0, #statement to test
       germ[i,t] <- 0,  #if true
       germ[i,t] <- rbinom(n=1, size=1, prob=prob_sown[i,t]))  #if false
   }
 }
 
+#### Population level ####
+# set input values based on factor levels
+species <- 2 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
+source <- 10 # options restricted by species
+source_name <- "DIST"
+wp <- 1
+temp <- 2
+NSown <- 100
+seedmass_csv <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/SeedMass_FINAL_Processed.csv', header=TRUE)
+names(seedmass_csv)[1] <- "Source"
+
+# pull matrix of coefficients
+chains_merged <- rbind(out_model[[1]], out_model[[2]], out_model[[3]])
+sampled_rows <- sample(1:nrow(chains_merged), NSown, replace=TRUE)
+coeff_matrix <- chains_merged[sampled_rows,]
+
+# find parameter index for input parameters
+## NOTE: Check these using rownames(summary_df)[beta1_cols]
+beta1_cols <- seq(species, 238, 7)
+beta2_cols <- seq(238+source, 1530, 38)
+beta3_cols <- seq(1530+wp, 1598, 2)
+beta4_cols <- seq(1598+temp, 1700, 3)
+seedmass <- mean(seedmass_csv$AvgSeedMass[which(seedmass_csv$Site==source_name)])
+cups <- sample(1:germData$NCups, NSown, replace=TRUE)
+chambers <- sample(1:germData$NChambers, NSown, replace=TRUE)
+reps <- sample(1:3, NSown, replace=TRUE)
+
+# set up matrix to hold transition probabilities
+prob_sown <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
+  
+# simulate by timesteps for each individual
+# NOTE: Check indices by using "head(coeff_matrix[,beta1_cols], 1)"
+for (i in 1:NSown){
+  for (t in 1:germData$NTimes){
+    beta1 <- coeff_matrix[i,beta1_cols[t]]
+    beta2 <- coeff_matrix[i,beta2_cols[t]]
+    beta3 <- coeff_matrix[i,beta3_cols[t]]
+    beta4 <- coeff_matrix[i,beta4_cols[t]]
+    beta5 <- coeff_matrix[i,1701]*seedmass
+    beta6 <- coeff_matrix[i,1701+cups[i]]
+    beta7 <- coeff_matrix[i,1917+chambers[i]]
+    #beta8 <- coeff_matrix[i,reps[i]]
+    beta9 <- coeff_matrix[i,1921]*((t-1)*2)
+    linear <- beta1 + beta2 + beta3 + beta4 + beta5 + beta6 + beta7 + beta8 + beta9
+    prob_sown[i,t] <- exp(linear) / (1+exp(linear))
+  }
+}
+
+# multiply transition probabilities through time
+germ <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
+for (i in 1:NSown){
+  germ[i,1] <- rbinom(n=1, size=1, prob=prob_sown[i,1])
+  for (t in 2:34){
+    ifelse (germ[i,t-1]==0, #statement to test
+      germ[i,t] <- 0,  #if true
+      germ[i,t] <- rbinom(n=1, size=1, prob=prob_sown[i,t]))  #if false
+  }
+}
