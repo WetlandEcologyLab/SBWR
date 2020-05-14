@@ -9,10 +9,10 @@ Coming Soon!
 
 ## Growth Chamber Experiment
 
-![seeded_cup]({{ site.baseurl }}/assets/images/seeded_cup.png)
+![seeded_cup]({{ site.baseurl }}/assets/images/seeded_cup.jpeg)
 
-![growth_chamber]({{ site.baseurl }}/assets/images/growth_chamber.png)
+![growth_chamber]({{ site.baseurl }}/assets/images/growth_chamber.jpeg)
 
-![seedlings_flagged]{{ site.baseurl }}/assets/images/seedlings_flagged.png)
+![seedlings_flagged]({{ site.baseurl }}/assets/images/seedlings_flagged.jpeg)
 
 ## Greenhouse Experiment
