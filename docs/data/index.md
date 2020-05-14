@@ -1,6 +1,6 @@
 ---
 layout: default
-title: The Model
+title: Data Collection
 ---
 
 From the Utah State University Wetland Ecology Lab.

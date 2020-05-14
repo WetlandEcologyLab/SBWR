@@ -14,11 +14,11 @@ The seed-based wetland restoration model is based on plants grown under controll
 - dry climate change scenario
 - wet climate change scenario
 
-Data on seedling traits, weekly survival, and end-of-season cover were then collected for all combinations of species and sources grown under the above conditions. For more details on how this data was collected, [see here](link to page with more details on data collection).
+Data on seedling traits, weekly survival, and end-of-season cover were then collected for all combinations of species and sources grown under the above conditions. For more details on how this data was collected, [see here]({{ site.baseurl }}/data).
 
 ## Model Basics
 
-The above data were used to build a model which simulates weekly rates of seed germination, seedling survival, and adult survival throughout a 12-week growing period after seeds are sown. These transition rates vary by our *primary predictors*: seeded species, source population, moisture level, and temperature. For more details on the model, [see here](link describing model in full detail, including equations). The model was validated using a statistical method called cross-validation, where a subset of the original data is held out of the analysis, then predictions from the model are compared to these data. The model was further field-verified using data from plants grown in both greenhouse and field experiments. More details on model validation can be found [here](link to detailed model validation page).
+The above data were used to build a model which simulates weekly rates of seed germination, seedling survival, and adult survival throughout a 12-week growing period after seeds are sown. These transition rates vary by our *primary predictors*: seeded species, source population, moisture level, and temperature. For more details on the model, [see here](link describing model in full detail, including equations). The model was validated using a statistical method called cross-validation, where a subset of the original data is held out of the analysis, then predictions from the model are compared to these data. The model was further field-verified using data from plants grown in both greenhouse and field experiments. More details on model validation can be found [here]({{ site.baseurl }}/model/ModelValidation).
 
 ## Model Outputs
 
