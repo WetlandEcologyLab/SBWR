@@ -35,7 +35,8 @@ textConnection("model{ # has the same effect as writing all this in a separate t
       ## Define linear model
       ##NOTE: beta9 defined by ((t-1)*2) because timesteps start at 0 (t-1)
       ## and proceed by intervals of 2
-      sown_linear[i,t] <- beta1[species[i],t]+ beta2[source[i],t]+ beta3[wp[i],t] + beta4[temp[i],t] + beta5*seedmass[i] + beta6[cup[i]] + beta7[chamber[i]] + beta9*((t*2)-1)
+      sown_linear[i,t] <- beta1[species[i],t]+ beta2[source[i],t]+ beta3[wp[i],t] + beta4[temp[i],t] + beta5*seedmass[i]
+#+ beta6[cup[i]] + beta7[chamber[i]] + beta9*((t*2)-1)
       # + beta8[rep[i]]
     
     ## Transformation to logit scale for logistic regression
@@ -53,12 +54,13 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   ##############################
   ### PRIORS ON MAIN EFFECTS ###
-  ##############################
+  ##############################  
 
   ## species effect on germination probability - categorical - varies by time
   for (t in 1:NTimes){
     for (spp in 1:NSpecies){ 
       beta1[spp,t] ~ dnorm(kappa1[spp], tau1[spp]) 
+      #beta1[spp,t] ~ dt(3, 0, 1)    
     }#spp
 
   ## sum-to-zero constraint not needed because no beta0- now beta1 species effect is taking up some of the intercept term
@@ -73,17 +75,18 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   # independent prior on species variances
   for (spp in 1:NSpecies){
-    tau1[spp] ~ dgamma(0.01, 0.01) # independent prior
+    tau1[spp] ~ dgamma(0.01, 0.1) # independent prior
   }#spp
   
   # uninformative hyperpriors on species mean
   mu1 ~ dnorm(0, 0.01)
-  sigma1 ~ dgamma(0.01, 0.01)
+  sigma1 ~ dgamma(0.01, 0.1)
 
   ## source effect on germination probability - hierarchical - varies by time
   for (t in 1:NTimes){
     for (src in 1:(NSources-1)){ 
       beta2[src,t] ~ dnorm(kappa2[src], tau2[src]) 
+      #beta2[src,t] ~ dt(3, 0, 1)
     }#src
   beta2[NSources,t] <- -1 * sum(beta2[1:(NSources-1),t]) # sum-to-zero constraint
   }#t
@@ -95,41 +98,42 @@ textConnection("model{ # has the same effect as writing all this in a separate t
     
   # independent priors on source variances
   for (src in 1:(NSources-1)){
-    tau2[src] ~ dgamma(0.01, 0.01)
+    tau2[src] ~ dgamma(0.01, 0.1)
   }#src
 
   # uninformative hyperpriors on source mean
   mu2 ~ dnorm(0, 0.01)
-  sigma2 ~ dgamma(0.01, 0.01)
+  sigma2 ~ dgamma(0.01, 0.1)
 
   ## wp effect on germination - hierarchical - varies by time
   for (t in 1:NTimes){
     beta3[1,t] <- 0
+    #beta3[1,t] ~ dt(3, 0, 1)
     beta3[2,t] ~ dnorm(kappa3, tau3)
     #beta3[2,t] <- -1 * beta3[1,t] # sum-to-zero constraint
   }#t
 
   # independent priors on wp mean and variance
   kappa3 ~ dnorm(0, 0.01)
-  tau3 ~ dgamma(0.01, 0.01)
+  tau3 ~ dgamma(0.01, 0.1)
 
   ## temp effect on germination - hierarchical - varies by time
   for (t in 1:NTimes){
-    for (tmp in c(1,3)){
+    for (tmp in 1:2){
       beta4[tmp,t] ~ dnorm(kappa4[tmp], tau4[tmp])
+      #beta4[tmp,t] ~ dt(3, 0, 1)
     }#tmp
-  #beta4[2,t] <- 0
-  beta4[2,t] <- -1 * sum(beta4[c(1,3),t]) # sum-to-zero constraint
+    beta4[3,t] <- -1 * sum(beta4[1:2,t]) # sum-to-zero constraint
   }#t
   
   # independent priors on temp means
-  for (tmp in c(1,3)){
+  for (tmp in 1:2){
     kappa4[tmp] ~ dnorm(0, 0.01)
   }#tmp
 
   # independent priors on temp variances
-  for (tmp in c(1,3)){
-    tau4[tmp] ~ dgamma(0.01, 0.01)
+  for (tmp in 1:2){
+    tau4[tmp] ~ dgamma(0.01, 0.1)
   }
 
   ## hydrothermal time effect on germination - fixed linear - slightly constrained variance prior
@@ -143,16 +147,16 @@ textConnection("model{ # has the same effect as writing all this in a separate t
   #beta6 ~ dnorm(0, 0.01)
 
   ## cup effect on germination - hierarchical
-  for (c in 1:(NCups-1)){ 
-    beta6[c] ~ dnorm(0, nu[1]) 
-  }#cup
-  beta6[NCups] <- -1 * sum(beta6[1:(NCups-1)]) # sum-to-zero constraint
+  #for (c in 1:(NCups-1)){ 
+  #  beta6[c] ~ dnorm(0, nu[1]) 
+  #}#cup
+  #beta6[NCups] <- -1 * sum(beta6[1:(NCups-1)]) # sum-to-zero constraint
 
   ## chamber effect on germination - hierarchical
-  for (chm in 1:(NChambers-1)){ 
-    beta7[chm] ~ dnorm(0, nu[2]) 
-  }#chm
-  beta7[NChambers] <- -1 * sum(beta7[1:(NChambers-1)]) # sum-to-zero constraint
+  #for (chm in 1:(NChambers-1)){ 
+  #  beta7[chm] ~ dnorm(0, nu[2]) 
+  #}#chm
+  #beta7[NChambers] <- -1 * sum(beta7[1:(NChambers-1)]) # sum-to-zero constraint
 
   ## rep effect on germination - hierarchical
   #for (rep in 1:2){ 
@@ -161,14 +165,14 @@ textConnection("model{ # has the same effect as writing all this in a separate t
   #beta8[3] <- sum(beta8[1:2]) # sum-to-zero constraint
 
   ## days effect - fixed linear - slightly constrained
-  beta9 ~ dnorm(0, 0.01)
+  #beta9 ~ dnorm(0, 0.01)
 
   ##############################################
   ### UNINFORMATIVE HYPERPRIORS ON VARIATION ###
   ##############################################
-  nu[1] ~ dgamma(0.01, 0.01)
-  nu[2] ~ dgamma(0.01, 0.01)
-  #nu[3] ~ dgamma(0.01, 0.01)
+  #nu[1] ~ dgamma(0.01, 0.1)
+  #nu[2] ~ dgamma(0.01, 0.1)
+  #nu[3] ~ dgamma(0.01, 0.1)
 
 }")#end model block
 
@@ -247,7 +251,7 @@ plot(samples_coda)
 
 
 #### JAGS FORMAT ####
-# save data as appropriate list
+## save data as appropriate list
 germData <- list(germ=germination_matrix[,5:10], 
                      species=as.integer(as.factor(germination_matrix$Species)),
                      source=as.integer(as.factor(germination_matrix$Source)), 
@@ -267,10 +271,11 @@ germData <- list(germ=germination_matrix[,5:10],
                     #days=as.numeric(as.factor(germination_matrix$)))
 
 ## Initialize model
-germModel <- jags.model(file=SownSurv, data=germData, n.chains = 3)#adapt=500
+germModel <- jags.model(file=SownSurv, data=germData, n.chains=3)#adapt=500
 ## Run model
 update(germModel, n.iter=1000)
-out_model28 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta9", "kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter = 1000)
+out_model28 <- coda.samples(model=germModel, variable.names = c("prob_sown", "beta1", "beta2", "beta3", "beta4", "beta5", #"beta6", "beta7", "beta9", 
+"kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter=1000)
 
 #### Assess convergence - save to PDF (R plot console runs out of space) ####
 ## Check out convergence plots
@@ -993,12 +998,24 @@ chains_merged <- rbind(out_model[[1]], out_model[[2]], out_model[[3]])
 sampled_rows <- sample(1:nrow(chains_merged), NSown, replace=TRUE)
 coeff_matrix <- chains_merged[sampled_rows,]
 
+# set indices for betas based on # timesteps
+timesteps = germData$NTimes
+beta1_end_index = timesteps * germData$NSpecies
+beta2_end_index = beta1_end_index + (timesteps*germData$NSources)
+beta3_end_index = beta2_end_index + (timesteps*2)
+beta4_end_index = beta3_end_index + (timesteps*3)
+beta5_index = beta4_end_index + 1
+beta6_end_index = beta5_index + germData$NCups
+beta7_end_index = beta6_end_index + germData$NChambers
+beta8_end_index = beta7_end_index + 3
+beta9_index = beta8_end_index + 1
+
 # find parameter index for input parameters
 ## NOTE: Check these using rownames(summary_df)[beta1_cols]
-beta1_cols <- seq(species, 238, 7)
-beta2_cols <- seq(238+source, 1530, 38)
-beta3_cols <- seq(1530+wp, 1598, 2)
-beta4_cols <- seq(1598+temp, 1700, 3)
+beta1_cols <- seq(species, 35, 7) # 238 for 34 timesteps
+beta2_cols <- seq(35+source, 225, 38) # 1530 for 34 samples 
+beta3_cols <- seq(225+wp, 235, 2) #1598 for 34 timesteps
+beta4_cols <- seq(235+temp, 250, 3) #1700 for 34 timesteps
 seedmass <- mean(seedmass_csv$AvgSeedMass[which(seedmass_csv$Site==source_name)])
 cups <- sample(1:germData$NCups, NSown, replace=TRUE)
 chambers <- sample(1:germData$NChambers, NSown, replace=TRUE)
@@ -1006,7 +1023,7 @@ reps <- sample(1:3, NSown, replace=TRUE)
 
 # set up matrix to hold transition probabilities
 prob_sown <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
-  
+
 # simulate by timesteps for each individual
 # NOTE: Check indices by using "head(coeff_matrix[,beta1_cols], 1)"
 for (i in 1:NSown){
@@ -1015,12 +1032,12 @@ for (i in 1:NSown){
     beta2 <- coeff_matrix[i,beta2_cols[t]]
     beta3 <- coeff_matrix[i,beta3_cols[t]]
     beta4 <- coeff_matrix[i,beta4_cols[t]]
-    beta5 <- coeff_matrix[i,1701]*seedmass
-    beta6 <- coeff_matrix[i,1701+cups[i]]
-    beta7 <- coeff_matrix[i,1917+chambers[i]]
+    beta5 <- coeff_matrix[i,251]*seedmass
+    #beta6 <- coeff_matrix[i,1701+cups[i]]
+    #beta7 <- coeff_matrix[i,1917+chambers[i]]
     #beta8 <- coeff_matrix[i,reps[i]]
-    beta9 <- coeff_matrix[i,1921]*((t-1)*2)
-    linear <- beta1 + beta2 + beta3 + beta4 + beta5 + beta6 + beta7 + beta8 + beta9
+    #beta9 <- coeff_matrix[i,1921]*((t-1)*2)
+    linear <- beta1 + beta2 + beta3 + beta4 + beta5 #+ beta6 + beta7 + beta8 + beta9
     prob_sown[i,t] <- exp(linear) / (1+exp(linear))
   }
 }
@@ -1029,7 +1046,7 @@ for (i in 1:NSown){
 germ <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
 for (i in 1:NSown){
   germ[i,1] <- rbinom(n=1, size=1, prob=prob_sown[i,1])
-  for (t in 2:34){
+  for (t in 2:5){
     ifelse (germ[i,t-1]==0, #statement to test
       germ[i,t] <- 0,  #if true
       germ[i,t] <- rbinom(n=1, size=1, prob=prob_sown[i,t]))  #if false
