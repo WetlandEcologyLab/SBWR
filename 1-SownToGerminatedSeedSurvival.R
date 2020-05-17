@@ -59,9 +59,8 @@ textConnection("model{ # has the same effect as writing all this in a separate t
   ## species effect on germination probability - categorical - varies by time
   for (t in 1:NTimes){
     for (spp in 1:NSpecies){ 
-      beta1[spp,t] ~ dnorm(kappa1[spp], tau1[spp]) 
-      #beta1[spp,t] ~ dt(3, 0, 1)    
-    }#spp
+      beta1[spp,t] ~ dnorm(kappa1[spp], pow(tau1[spp],2))
+  }#spp
 
   ## sum-to-zero constraint not needed because no beta0- now beta1 species effect is taking up some of the intercept term
   #beta1[NSpecies,t] <- -1 * sum(beta1[1:(NSpecies-1),t]) # sum-to-zero constraint on species axis
@@ -70,58 +69,60 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   # conditional prior on species means
   for (spp in 1:NSpecies){
-    kappa1[spp] ~ dnorm(mu1, sigma1) # conditional prior
+    kappa1[spp] ~ dnorm(mu1, pow(sigma1,2)) # conditional prior
   }#spp
 
   # independent prior on species variances
   for (spp in 1:NSpecies){
-    tau1[spp] ~ dgamma(0.01, 0.1) # independent prior
+    tau1[spp] ~ dt(0, pow(5, -2), 1)T(0,)
+    #dgamma(0.01, 0.01)#dt(0, pow(2.5,-2), 1)T(0,)# independent prior
   }#spp
   
   # uninformative hyperpriors on species mean
   mu1 ~ dnorm(0, 0.01)
-  sigma1 ~ dgamma(0.01, 0.1)
+  sigma1 ~ dt(0, pow(2.5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
+  # for half-cauchy distribution:
+  #sigma1 ~ dt(0, pow(2.5,-2), 1)T(0,) # half cauchy
+  #sigma1 ~ dgamma (.5, .5) # chi^2 with 1 d.f.
+  #sigma.theta <- abs()/sqrt(tau.eta) 
 
   ## source effect on germination probability - hierarchical - varies by time
   for (t in 1:NTimes){
     for (src in 1:(NSources-1)){ 
-      beta2[src,t] ~ dnorm(kappa2[src], tau2[src]) 
-      #beta2[src,t] ~ dt(3, 0, 1)
+      beta2[src,t] ~ dnorm(kappa2[src], pow(tau2[src],2)) 
     }#src
   beta2[NSources,t] <- -1 * sum(beta2[1:(NSources-1),t]) # sum-to-zero constraint
   }#t
 
   # conditional priors on source means
   for (src in 1:(NSources-1)){
-    kappa2[src] ~ dnorm(mu2, sigma2)
+    kappa2[src] ~ dnorm(mu2, pow(sigma2,2))
   }#src
     
   # independent priors on source variances
   for (src in 1:(NSources-1)){
-    tau2[src] ~ dgamma(0.01, 0.1)
+    tau2[src] ~ dt(0, pow(5,-2), 1)T(0,)#dgamma(0.01, 0.01)
   }#src
 
   # uninformative hyperpriors on source mean
   mu2 ~ dnorm(0, 0.01)
-  sigma2 ~ dgamma(0.01, 0.1)
+  sigma2 ~ dt(0, pow(2.5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
 
   ## wp effect on germination - hierarchical - varies by time
   for (t in 1:NTimes){
     beta3[1,t] <- 0
-    #beta3[1,t] ~ dt(3, 0, 1)
-    beta3[2,t] ~ dnorm(kappa3, tau3)
+    beta3[2,t] ~ dnorm(kappa3, pow(tau3,2))
     #beta3[2,t] <- -1 * beta3[1,t] # sum-to-zero constraint
   }#t
 
   # independent priors on wp mean and variance
   kappa3 ~ dnorm(0, 0.01)
-  tau3 ~ dgamma(0.01, 0.1)
+  tau3 ~ dt(0, pow(5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
 
   ## temp effect on germination - hierarchical - varies by time
   for (t in 1:NTimes){
     for (tmp in 1:2){
-      beta4[tmp,t] ~ dnorm(kappa4[tmp], tau4[tmp])
-      #beta4[tmp,t] ~ dt(3, 0, 1)
+      beta4[tmp,t] ~ dnorm(kappa4[tmp], pow(tau4[tmp],2))
     }#tmp
     beta4[3,t] <- -1 * sum(beta4[1:2,t]) # sum-to-zero constraint
   }#t
@@ -133,7 +134,7 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   # independent priors on temp variances
   for (tmp in 1:2){
-    tau4[tmp] ~ dgamma(0.01, 0.1)
+    tau4[tmp] ~ dt(0, pow(5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
   }
 
   ## hydrothermal time effect on germination - fixed linear - slightly constrained variance prior
@@ -170,9 +171,9 @@ textConnection("model{ # has the same effect as writing all this in a separate t
   ##############################################
   ### UNINFORMATIVE HYPERPRIORS ON VARIATION ###
   ##############################################
-  #nu[1] ~ dgamma(0.01, 0.1)
-  #nu[2] ~ dgamma(0.01, 0.1)
-  #nu[3] ~ dgamma(0.01, 0.1)
+  #nu[1] ~ dgamma(10, 10)
+  #nu[2] ~ dgamma(10, 10)
+  #nu[3] ~ dgamma(10, 10)
 
 }")#end model block
 
@@ -252,7 +253,7 @@ plot(samples_coda)
 
 #### JAGS FORMAT ####
 ## save data as appropriate list
-germData <- list(germ=germination_matrix[,5:10], 
+germData <- list(germ=germination_matrix[,1:10], 
                      species=as.integer(as.factor(germination_matrix$Species)),
                      source=as.integer(as.factor(germination_matrix$Source)), 
                      seedmass=germination_matrix$SeedMass, 
@@ -265,17 +266,17 @@ germData <- list(germ=germination_matrix[,5:10],
                      NSpecies = length(unique(germination_matrix$Species)), 
                      NSources = length(unique(germination_matrix$Source)),
                      NCups = length(unique(germination_matrix$CupNo)),
-                     NTimes = 5,
+                     NTimes = 10,
                      NChambers = length(unique(germination_matrix$Chamber)))
                     # use if in long format:
                     #days=as.numeric(as.factor(germination_matrix$)))
 
 ## Initialize model
-germModel <- jags.model(file=SownSurv, data=germData, n.chains=3)#adapt=500
+germModel <- jags.model(file=SownSurv, data=germData, n.chains=3, n.adapt=1000)
 ## Run model
 update(germModel, n.iter=1000)
-out_model28 <- coda.samples(model=germModel, variable.names = c("prob_sown", "beta1", "beta2", "beta3", "beta4", "beta5", #"beta6", "beta7", "beta9", 
-"kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter=1000)
+out_model31 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", #"beta6", "beta7", "beta9", 
+"kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter=2000)
 
 #### Assess convergence - save to PDF (R plot console runs out of space) ####
 ## Check out convergence plots
@@ -983,22 +984,22 @@ residual_plot(predicted=full$Predicted,actual=full$Actual)
 ### SIMULATING POPULATION ###
 #############################
 #### Individual level ####
-# set input values based on factor levels
-species <- 2 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
-source <- 10 # options restricted by species
+## set input values based on factor levels
+species <- 6 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
+source <- 21 # options restricted by species
 source_name <- "DIST"
 wp <- 1
 temp <- 2
-NSown <- 100
+NSown <- 1000
 seedmass_csv <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/SeedMass_FINAL_Processed.csv', header=TRUE)
 names(seedmass_csv)[1] <- "Source"
 
-# pull matrix of coefficients
+## pull matrix of coefficients
 chains_merged <- rbind(out_model[[1]], out_model[[2]], out_model[[3]])
 sampled_rows <- sample(1:nrow(chains_merged), NSown, replace=TRUE)
 coeff_matrix <- chains_merged[sampled_rows,]
 
-# set indices for betas based on # timesteps
+## set indices for betas based on # timesteps
 timesteps = germData$NTimes
 beta1_end_index = timesteps * germData$NSpecies
 beta2_end_index = beta1_end_index + (timesteps*germData$NSources)
@@ -1010,12 +1011,12 @@ beta7_end_index = beta6_end_index + germData$NChambers
 beta8_end_index = beta7_end_index + 3
 beta9_index = beta8_end_index + 1
 
-# find parameter index for input parameters
+## find parameter index for input parameters
 ## NOTE: Check these using rownames(summary_df)[beta1_cols]
-beta1_cols <- seq(species, 35, 7) # 238 for 34 timesteps
-beta2_cols <- seq(35+source, 225, 38) # 1530 for 34 samples 
-beta3_cols <- seq(225+wp, 235, 2) #1598 for 34 timesteps
-beta4_cols <- seq(235+temp, 250, 3) #1700 for 34 timesteps
+beta1_cols <- seq(species, beta1_end_index, 7) # 238 for 34 timesteps
+beta2_cols <- seq(beta1_end_index+source, beta2_end_index, 38) # 1530 for 34 samples 
+beta3_cols <- seq(beta2_end_index+wp, beta3_end_index, 2) #1598 for 34 timesteps
+beta4_cols <- seq(beta3_end_index+temp, beta4_end_index, 3) #1700 for 34 timesteps
 seedmass <- mean(seedmass_csv$AvgSeedMass[which(seedmass_csv$Site==source_name)])
 cups <- sample(1:germData$NCups, NSown, replace=TRUE)
 chambers <- sample(1:germData$NChambers, NSown, replace=TRUE)
@@ -1024,8 +1025,8 @@ reps <- sample(1:3, NSown, replace=TRUE)
 # set up matrix to hold transition probabilities
 prob_sown <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
 
-# simulate by timesteps for each individual
-# NOTE: Check indices by using "head(coeff_matrix[,beta1_cols], 1)"
+## simulate by timesteps for each individual
+## NOTE: Check indices by using "head(coeff_matrix[,beta1_cols], 1)"
 for (i in 1:NSown){
   for (t in 1:germData$NTimes){
     beta1 <- coeff_matrix[i,beta1_cols[t]]
@@ -1042,20 +1043,43 @@ for (i in 1:NSown){
   }
 }
 
-# multiply transition probabilities through time
+## multiply transition probabilities through time
 germ <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
 for (i in 1:NSown){
   germ[i,1] <- rbinom(n=1, size=1, prob=prob_sown[i,1])
-  for (t in 2:5){
+  for (t in 2:germData$NTimes){
     ifelse (germ[i,t-1]==0, #statement to test
       germ[i,t] <- 0,  #if true
       germ[i,t] <- rbinom(n=1, size=1, prob=prob_sown[i,t]))  #if false
   }
 }
 
+## check mean predictions against mean transitions for data
+# calculate predicted mean transition rate per timestep (p)
+## NOTE: remember that the real-life transition rate is (1-p)
+predicted_means <- c()
+for (t in 1:germData$NTimes){ 
+  predicted_means[t] <- mean(prob_sown[,t], na.rm=TRUE)
+}
+# add reference lines
+abline(h=0, col="darkgrey")
+abline(h=1, col="darkgrey")
+# plot predicted means
+plot(predicted_means, col="blue", ylim=c(0,1), ylab="1 - Transition rate", xlab="Timestep")
+lines(predicted_means, col="blue")
+# calculate means in real data
+subset_df <- germination_matrix[which(germination_matrix$Source==source_name & germination_matrix$Temp==temp & germination_matrix$WP==wp),]
+real_means <- c()
+for (t in 1:germData$NTimes){
+  real_means[t] <- mean(subset_df[,t], na.rm=TRUE)
+}
+# plot real data
+points(real_means, col="red", lty="dotted")
+lines(real_means, col="red", lty="dotted")
+
 #### Population level ####
 # set input values based on factor levels
-species <- 2 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
+species <- 1 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
 source <- 10 # options restricted by species
 source_name <- "DIST"
 wp <- 1
@@ -1091,12 +1115,12 @@ for (i in 1:NSown){
     beta2 <- coeff_matrix[i,beta2_cols[t]]
     beta3 <- coeff_matrix[i,beta3_cols[t]]
     beta4 <- coeff_matrix[i,beta4_cols[t]]
-    beta5 <- coeff_matrix[i,1701]*seedmass
-    beta6 <- coeff_matrix[i,1701+cups[i]]
-    beta7 <- coeff_matrix[i,1917+chambers[i]]
+    beta5 <- coeff_matrix[i,beta5_index]*seedmass
+    #beta6 <- coeff_matrix[i,1701+cups[i]]
+    #beta7 <- coeff_matrix[i,1917+chambers[i]]
     #beta8 <- coeff_matrix[i,reps[i]]
-    beta9 <- coeff_matrix[i,1921]*((t-1)*2)
-    linear <- beta1 + beta2 + beta3 + beta4 + beta5 + beta6 + beta7 + beta8 + beta9
+    #beta9 <- coeff_matrix[i,1921]*((t-1)*2)
+    linear <- beta1 + beta2 + beta3 + beta4 + beta5 #+ beta6 + beta7 + beta8 + beta9
     prob_sown[i,t] <- exp(linear) / (1+exp(linear))
   }
 }
@@ -1105,7 +1129,7 @@ for (i in 1:NSown){
 germ <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
 for (i in 1:NSown){
   germ[i,1] <- rbinom(n=1, size=1, prob=prob_sown[i,1])
-  for (t in 2:34){
+  for (t in 2:germData$NTimes){
     ifelse (germ[i,t-1]==0, #statement to test
       germ[i,t] <- 0,  #if true
       germ[i,t] <- rbinom(n=1, size=1, prob=prob_sown[i,t]))  #if false
