@@ -74,17 +74,12 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   # independent prior on species variances
   for (spp in 1:NSpecies){
-    tau1[spp] ~ dt(0, pow(5, -2), 1)T(0,)
-    #dgamma(0.01, 0.01)#dt(0, pow(2.5,-2), 1)T(0,)# independent prior
+    tau1[spp] ~ dt(0, pow(5,-2), 1)T(0,) # independent prior
   }#spp
   
   # uninformative hyperpriors on species mean
   mu1 ~ dnorm(0, 0.01)
-  sigma1 ~ dt(0, pow(2.5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
-  # for half-cauchy distribution:
-  #sigma1 ~ dt(0, pow(2.5,-2), 1)T(0,) # half cauchy
-  #sigma1 ~ dgamma (.5, .5) # chi^2 with 1 d.f.
-  #sigma.theta <- abs()/sqrt(tau.eta) 
+  sigma1 ~ dt(0, pow(2.5,-2), 1)T(0,)
 
   ## source effect on germination probability - hierarchical - varies by time
   for (t in 1:NTimes){
@@ -101,12 +96,12 @@ textConnection("model{ # has the same effect as writing all this in a separate t
     
   # independent priors on source variances
   for (src in 1:(NSources-1)){
-    tau2[src] ~ dt(0, pow(5,-2), 1)T(0,)#dgamma(0.01, 0.01)
+    tau2[src] ~ dt(0, pow(2.5,-2), 1)T(0,)
   }#src
 
   # uninformative hyperpriors on source mean
   mu2 ~ dnorm(0, 0.01)
-  sigma2 ~ dt(0, pow(2.5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
+  sigma2 ~ dt(0, pow(2.5,-2), 1)T(0,)
 
   ## wp effect on germination - hierarchical - varies by time
   for (t in 1:NTimes){
@@ -117,7 +112,7 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   # independent priors on wp mean and variance
   kappa3 ~ dnorm(0, 0.01)
-  tau3 ~ dt(0, pow(5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
+  tau3 ~ dt(0, pow(2.5,-2), 1)T(0,)
 
   ## temp effect on germination - hierarchical - varies by time
   for (t in 1:NTimes){
@@ -134,7 +129,7 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 
   # independent priors on temp variances
   for (tmp in 1:2){
-    tau4[tmp] ~ dt(0, pow(5,-2), 1)T(0,)#dunif(0,10)#dgamma(10, 10)
+    tau4[tmp] ~ dt(0, pow(2.5,-2), 1)T(0,)
   }
 
   ## hydrothermal time effect on germination - fixed linear - slightly constrained variance prior
@@ -253,7 +248,7 @@ plot(samples_coda)
 
 #### JAGS FORMAT ####
 ## save data as appropriate list
-germData <- list(germ=germination_matrix[,1:10], 
+germData <- list(germ=germination_matrix[,1:17], 
                      species=as.integer(as.factor(germination_matrix$Species)),
                      source=as.integer(as.factor(germination_matrix$Source)), 
                      seedmass=germination_matrix$SeedMass, 
@@ -266,7 +261,7 @@ germData <- list(germ=germination_matrix[,1:10],
                      NSpecies = length(unique(germination_matrix$Species)), 
                      NSources = length(unique(germination_matrix$Source)),
                      NCups = length(unique(germination_matrix$CupNo)),
-                     NTimes = 10,
+                     NTimes = 17,
                      NChambers = length(unique(germination_matrix$Chamber)))
                     # use if in long format:
                     #days=as.numeric(as.factor(germination_matrix$)))
@@ -275,8 +270,8 @@ germData <- list(germ=germination_matrix[,1:10],
 germModel <- jags.model(file=SownSurv, data=germData, n.chains=3, n.adapt=1000)
 ## Run model
 update(germModel, n.iter=1000)
-out_model31 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", #"beta6", "beta7", "beta9", 
-"kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=1, n.iter=2000)
+out_model37 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", #"beta6", "beta7", "beta9", 
+"kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=10, n.iter=10000)
 
 #### Assess convergence - save to PDF (R plot console runs out of space) ####
 ## Check out convergence plots
@@ -986,15 +981,15 @@ residual_plot(predicted=full$Predicted,actual=full$Actual)
 #### Individual level ####
 ## set input values based on factor levels
 species <- 6 # options: BOMA, DISP, ELPA, JUBA, PHAU, SCAC, SCAM
-source <- 21 # options restricted by species
-source_name <- "DIST"
+source <- 20 # options restricted by species
+source_name <- "KIWA"
 wp <- 1
-temp <- 2
+temp <- 3
 NSown <- 1000
 seedmass_csv <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/SeedMass_FINAL_Processed.csv', header=TRUE)
 names(seedmass_csv)[1] <- "Source"
 
-## pull matrix of coefficients
+## pull matrix of coefficients from model
 chains_merged <- rbind(out_model[[1]], out_model[[2]], out_model[[3]])
 sampled_rows <- sample(1:nrow(chains_merged), NSown, replace=TRUE)
 coeff_matrix <- chains_merged[sampled_rows,]
@@ -1057,22 +1052,28 @@ for (i in 1:NSown){
 ## check mean predictions against mean transitions for data
 # calculate predicted mean transition rate per timestep (p)
 ## NOTE: remember that the real-life transition rate is (1-p)
+plot_title <- paste("Species:",species,"Source:",source_name,"WP:",wp,"Temp:",temp)
 predicted_means <- c()
 for (t in 1:germData$NTimes){ 
   predicted_means[t] <- mean(prob_sown[,t], na.rm=TRUE)
 }
-# add reference lines
-abline(h=0, col="darkgrey")
-abline(h=1, col="darkgrey")
 # plot predicted means
-plot(predicted_means, col="blue", ylim=c(0,1), ylab="1 - Transition rate", xlab="Timestep")
+plot(predicted_means, col="blue", ylim=c(0,1), ylab="1 - Transition rate", xlab="Timestep", main=plot_title)
 lines(predicted_means, col="blue")
 # calculate means in real data
 subset_df <- germination_matrix[which(germination_matrix$Source==source_name & germination_matrix$Temp==temp & germination_matrix$WP==wp),]
 real_means <- c()
+ones_count <- c()
 for (t in 1:germData$NTimes){
-  real_means[t] <- mean(subset_df[,t], na.rm=TRUE)
-}
+  ones_count[t] <- length(which(subset_df[,t]==1))
+  ifelse (t==0, # condition
+      num_inds_remaining <- NSown, # if true
+      num_inds_remaining <- ones_count[t-1]) # if false
+  real_means[t] <- ones_count[t] / num_inds_remaining
+}#t
+# add reference lines
+abline(h=0, col="darkgrey")
+abline(h=1, col="darkgrey")
 # plot real data
 points(real_means, col="red", lty="dotted")
 lines(real_means, col="red", lty="dotted")
