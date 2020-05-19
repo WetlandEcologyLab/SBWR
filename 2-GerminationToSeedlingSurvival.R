@@ -55,7 +55,7 @@ GermSurv <- textConnection("model{ # has the same effect as writing all this in 
   ## Linear model of rate parameter based on each observation
   for (i in 1:NGerm){
     for (t in 1:NTimes){
-      germ_linear[i,t] <- beta1[species[i],t] + beta2[source[i],t] + beta3[wp[i],t]+ beta4[temp[i],t] + beta5*pc1[i,t] + beta6*pc2[i] + beta7*pc3[i] + beta8*pc4[i] + beta9[cup[i]] + beta10[chamber[i]] + beta11[rep[i]] + beta12*GermDays + beta13*((t-1)*2)
+      germ_linear[i,t] <- beta1[species[i],t] + beta2[source[i],t] + beta3[wp[i],t]+ beta4[temp[i],t] + beta5*pc1[i,t] + beta6*pc2[i] + beta7*pc3[i] + beta8*pc4[i] + beta9[cup[i]] + beta10[chamber[i]] + beta11[rep[i]] + beta12*GermDays[i] + beta13*((t-1)*2)
     
       # transformation on logit scale for logistic regression
       prob_germ[i,t] <- exp(germ_linear[i,t]) / (1+exp(germ_linear[i,t]))
@@ -87,12 +87,12 @@ GermSurv <- textConnection("model{ # has the same effect as writing all this in 
 
   # independent prior on variance of species effect
   for (spp in 1:NSpecies){
-    tau1[spp] ~ dgamma(0.01, 0.01)
+    tau1[spp] ~ dt(0, pow(5,-2), 1)T(0,)
   }#spp
 
   # hyperpriors on overall species mean
   mu1 ~ dnorm(0, 0.01)
-  sigma1 ~ dgamma(0.01, 0.01)
+  sigma1 ~ dt(0, pow(2.5,-2), 1)T(0,)
 
   ## source effect - categorical
   for (t in 1:NTimes){ 
@@ -109,12 +109,12 @@ GermSurv <- textConnection("model{ # has the same effect as writing all this in 
 
   # independent priors on variance of source effect
   for (src in 1:(NSources-1)){
-    tau2[src] ~ dgamma(0.01, 0.01)
+    tau2[src] ~ dt(0, pow(2.5,-2), 1)T(0,)
   }#src
   
   # hyperpriors on overall mean source effect
   mu2 ~ dnorm(0, 0.01)
-  sigma2 ~ dgamma(0.01, 0.01)
+  sigma2 ~ dt(0, pow(2.5,-2), 1)T(0,)
 
   ## water potential effect - categorical
   for (t in 1:NTimes){
@@ -124,7 +124,7 @@ GermSurv <- textConnection("model{ # has the same effect as writing all this in 
 
   # hyperpriors on wp2 mean effect
   kappa3 ~ dnorm(0, 0.01)
-  tau3 ~ dgamma(0.01, 0.01)
+  tau3 ~ dt(0, pow(2.5,-2), 1)T(0,)
   
   ## temperature effect - categorical
   for (t in 1:NTimes){
@@ -141,7 +141,7 @@ GermSurv <- textConnection("model{ # has the same effect as writing all this in 
   
   # independent priors on temp variances
   for (tmp in c(1,3)){
-    tau4[tmp] ~ dgamma(0.01, 0.01)
+    tau4[tmp] ~ dt(0, pow(2.5, -2), 1)T(0,)
   }#tmp
 
   # hyperpriors for overall temp mean

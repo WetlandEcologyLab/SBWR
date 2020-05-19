@@ -35,10 +35,8 @@ textConnection("model{ # has the same effect as writing all this in a separate t
       ## Define linear model
       ##NOTE: beta9 defined by ((t-1)*2) because timesteps start at 0 (t-1)
       ## and proceed by intervals of 2
-      sown_linear[i,t] <- beta1[species[i],t]+ beta2[source[i],t]+ beta3[wp[i],t] + beta4[temp[i],t] + beta5*seedmass[i]
-#+ beta6[cup[i]] + beta7[chamber[i]] + beta9*((t*2)-1)
-      # + beta8[rep[i]]
-    
+      sown_linear[i,t] <- beta1[species[i],t]+ beta2[source[i],t]+ beta3[wp[i],t] + beta4[temp[i],t] + beta5*seedmass[i] + beta6[cup[i]] + beta7[chamber[i]] + beta8[rep[i]] + beta9*((t*2)-1)
+
     ## Transformation to logit scale for logistic regression
     prob_sown[i,t] <- exp(sown_linear[i,t]) / (1+exp(sown_linear[i,t]))
 
@@ -143,32 +141,32 @@ textConnection("model{ # has the same effect as writing all this in a separate t
   #beta6 ~ dnorm(0, 0.01)
 
   ## cup effect on germination - hierarchical
-  #for (c in 1:(NCups-1)){ 
-  #  beta6[c] ~ dnorm(0, nu[1]) 
-  #}#cup
-  #beta6[NCups] <- -1 * sum(beta6[1:(NCups-1)]) # sum-to-zero constraint
+  for (c in 1:(NCups-1)){ 
+    beta6[c] ~ dnorm(0, pow(nu[1],2)) 
+  }#cup
+  beta6[NCups] <- -1 * sum(beta6[1:(NCups-1)]) # sum-to-zero constraint
 
   ## chamber effect on germination - hierarchical
-  #for (chm in 1:(NChambers-1)){ 
-  #  beta7[chm] ~ dnorm(0, nu[2]) 
-  #}#chm
-  #beta7[NChambers] <- -1 * sum(beta7[1:(NChambers-1)]) # sum-to-zero constraint
+  for (chm in 1:(NChambers-1)){ 
+    beta7[chm] ~ dnorm(0, pow(nu[2],2)) 
+  }#chm
+  beta7[NChambers] <- -1 * sum(beta7[1:(NChambers-1)]) # sum-to-zero constraint
 
   ## rep effect on germination - hierarchical
-  #for (rep in 1:2){ 
-  #  beta8[rep] ~ dnorm(0, nu[3]) 
-  #}
-  #beta8[3] <- sum(beta8[1:2]) # sum-to-zero constraint
+  for (rep in 1:2){ 
+    beta8[rep] ~ dnorm(0, pow(nu[3],2)) 
+  }
+  beta8[3] <- sum(beta8[1:2]) # sum-to-zero constraint
 
   ## days effect - fixed linear - slightly constrained
-  #beta9 ~ dnorm(0, 0.01)
+  beta9 ~ dnorm(0, 0.01)
 
   ##############################################
   ### UNINFORMATIVE HYPERPRIORS ON VARIATION ###
   ##############################################
-  #nu[1] ~ dgamma(10, 10)
-  #nu[2] ~ dgamma(10, 10)
-  #nu[3] ~ dgamma(10, 10)
+  nu[1] ~ dt(0, pow(2.5,-2), 1)T(0,)
+  nu[2] ~ dt(0, pow(2.5,-2), 1)T(0,)
+  nu[3] ~ dt(0, pow(2.5,-2), 1)T(0,)
 
 }")#end model block
 
@@ -248,7 +246,7 @@ plot(samples_coda)
 
 #### JAGS FORMAT ####
 ## save data as appropriate list
-germData <- list(germ=germination_matrix[,1:17], 
+germData <- list(germ=germination_matrix[,1:34], 
                      species=as.integer(as.factor(germination_matrix$Species)),
                      source=as.integer(as.factor(germination_matrix$Source)), 
                      seedmass=germination_matrix$SeedMass, 
@@ -261,17 +259,14 @@ germData <- list(germ=germination_matrix[,1:17],
                      NSpecies = length(unique(germination_matrix$Species)), 
                      NSources = length(unique(germination_matrix$Source)),
                      NCups = length(unique(germination_matrix$CupNo)),
-                     NTimes = 17,
+                     NTimes = 34,
                      NChambers = length(unique(germination_matrix$Chamber)))
-                    # use if in long format:
-                    #days=as.numeric(as.factor(germination_matrix$)))
 
 ## Initialize model
 germModel <- jags.model(file=SownSurv, data=germData, n.chains=3, n.adapt=1000)
 ## Run model
 update(germModel, n.iter=1000)
-out_model37 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", #"beta6", "beta7", "beta9", 
-"kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=10, n.iter=10000)
+out_model <- coda.samples(model=germModel, variable.names = c("beta1", "beta2", "beta3", "beta4", "beta5", "beta6", "beta7", "beta8", "beta9", "kappa1", "tau1", "kappa2", "tau2", "kappa3", "tau3", "kappa4", "tau4", "mu1", "mu2", "sigma1", "sigma2", "nu"), thin=10, n.iter=10000)
 
 #### Assess convergence - save to PDF (R plot console runs out of space) ####
 ## Check out convergence plots
@@ -290,8 +285,8 @@ out_model37 <- coda.samples(model=germModel, variable.names = c("beta1", "beta2"
 # plot trace plots to PDF
 orig.mar <- par('mar') # save default plot margins to reset later
 par(mar=c(1,1,1,1)) # change plot margins
-plot(out_model21, ask=TRUE) # plot chains
-dev.off() # close PDF
+plot(out_model) # plot chains
+#dev.off() # close PDF
 par(mar=orig.mar) # return plot margins to normal
 
 ## check effective sample size- should be on the order of 1000s, >300 generally ok
@@ -307,19 +302,14 @@ par(mar=orig.mar) # return plot margins to normal
 #### View estimates ####
 ## summarize outputs
 summary <- summary(out_model)
-## compare single species-timestep means to modeled species-timestep effects...
-chain1 <- out_model[[1]]
-chain2 <- out_model[[2]]
-chain3 <- out_model[[3]]
-
 
 #### CHECKING COEFFICIENTS THAT ARE NOT CONVERGING ####
 ## Checking beta0 and beta9 against each other 
 ## NOTE: Subscripts for sums may need to be changed depending on model parameterization
 # pull out coda samples from each chain
-chain1 <- out_model16[[1]]
-chain2 <- out_model16[[2]]
-chain3 <- out_model16[[3]]
+chain1 <- out_model[[1]]
+chain2 <- out_model[[2]]
+chain3 <- out_model[[3]]
 # take the sum of beta0 and beta9 for each chain
 sum_chain1 <- chain1[,1] + chain1[,473]; traceplot(sum_chain1, col="black")
 sum_chain2 <- chain2[,1] + chain2[,473]; traceplot(sum_chain2,col="red")
@@ -364,32 +354,62 @@ cor(GermData$seedmass, GermData$sct) # 0.073
 ####################
 library(ggplot2)
 library(vioplot)
-summary <- summary(out_model26)
-summary_df <- as.data.frame(summary$quantiles)
-rownames(summary_df) <- rownames(summary$quantiles)
+summary <- summary(out_model)
+summary_quantiles <- as.data.frame(summary$quantiles)
+rownames(summary_quantiles) <- rownames(summary$quantiles)
 chains_merged <- rbind(out_model[[1]], out_model[[2]], out_model[[3]])
 
+#### set indices for betas based on # timesteps ####
+## NOTE: These will need to be updated if betas are added or removed!
+timesteps = germData$NTimes
+beta1_end_index = timesteps * germData$NSpecies
+beta2_end_index = beta1_end_index + (timesteps*germData$NSources)
+beta3_end_index = beta2_end_index + (timesteps*2)
+beta4_end_index = beta3_end_index + (timesteps*3)
+beta5_index = beta4_end_index + 1
+beta6_end_index = beta5_index + germData$NCups
+beta7_end_index = beta6_end_index + germData$NChambers
+beta8_end_index = beta7_end_index + 3
+beta9_index = beta8_end_index + 1
+kappa1_end_index = beta9_index + germData$NSpecies
+kappa2_end_index = kappa1_end_index + germData$NSources
+kappa3_index = kappa2_end_index + 1
+kappa4_index = kappa3_index + 1
+mu1_index = kappa4_end_index + 1
+mu2_index = mu1_index + 1
+nu1_index = mu2_index + 1
+nu2_index = nu1_index + 1
+nu3_index = nu2_index + 1
+sigma1_index = nu3_index + 1
+sigma2_index = sigma1_index + 1
+tau1_end_index = sigma2_index + germData$NSpecies
+tau2_end_index = tau1_end_index + germData$NSources
+tau3_index = tau2_end_index + 1
+tau4_index = tau3_index + 2
+
 #### mu estimates ####
-# overall species effect (mu1)
+# boxplot
 ggplot(mapping=aes(x="mu1",
-                   ymin=summary_df[521,1],
-                   lower=summary_df[521,2],
-                   middle=summary_df[521,3],
-                   upper=summary_df[521,4],
-                   ymax=summary_df[521,5]))+
+                   ymin=summary_quantiles[mu1_index,1],
+                   lower=summary_quantiles[mu1_index,2],
+                   middle=summary_quantiles[mu1_index,3],
+                   upper=summary_quantiles[mu1_index,4],
+                   ymax=summary_quantiles[mu1_index,5]))+
   geom_boxplot(stat="identity")+
   ggtitle("Overall species effect")+
   theme_classic()+
   xlab("Mu1")
+# violin plots
+vioplot(summary_quantiles[mu1_index], col = "gray", names=levels(as.factor(germination_matrix$Species)))
 
 #### Kappa1 estimates ####
 # species means (kappa1[spp]) boxplot
 ggplot(mapping=aes(x=levels(as.factor(germination_matrix$Species)),
-                   ymin=summary_df[474:480,1], # 2.5% percentile
-                   lower=summary_df[474:480,2], # 25% percentile
-                   middle=summary_df[474:480,3], # median
-                   upper=summary_df[474:480,4], # 75% percentile
-                   ymax=summary_df[474:480,5]))+ # 97.5% percentile
+                   ymin=summary_quantiles[(beta9_index+1):kappa1_end_index,1], # 2.5% percentile
+                   lower=summary_quantiles[(beta9_index+1):kappa1_end_index,2], # 25% percentile
+                   middle=summary_quantiles[(beta9_index+1):kappa1_end_index,3], # median
+                   upper=summary_quantiles[(beta9_index+1):kappa1_end_index,4], # 75% percentile
+                   ymax=summary_quantiles[(beta9_index+1):kappa1_end_index,5]))+ # 97.5% percentile
   geom_boxplot(stat="identity")+
   ggtitle("Kappa1 estimates: Mean species effects")+
   theme_classic()+
@@ -397,13 +417,14 @@ ggplot(mapping=aes(x=levels(as.factor(germination_matrix$Species)),
   xlab("Species")+
   geom_abline(aes(slope=0, intercept=0), col="red")
 # species means (kappa1[spp]) violin plots
-kappa1_1 <- chains_merged[,474]
-kappa1_2 <- chains_merged[,475]
-kappa1_3 <- chains_merged[,476]
-kappa1_4 <- chains_merged[,477]
-kappa1_5 <- chains_merged[,478]
-kappa1_6 <- chains_merged[,479]
-kappa1_7 <- chains_merged[,480]
+kappa1_1 <- chains_merged[,(beta9_index+1)]
+kappa1_2 <- chains_merged[,(beta9_index+2)]
+kappa1_3 <- chains_merged[,(beta9_index+3)]
+kappa1_4 <- chains_merged[,(beta9_index+4)]
+kappa1_5 <- chains_merged[,(beta9_index+5)]
+kappa1_6 <- chains_merged[,(beta9_index+6)]
+kappa1_7 <- chains_merged[,(beta9_index+7)]
+#vioplot(chains_merged[,(beta9_index+1:beta9_index+7)], col="grey", names=levels(as.factor(germination_matrix$Species)))
 vioplot(kappa1_1, kappa1_2, kappa1_3, kappa1_4, kappa1_5, kappa1_6, kappa1_7, col = "gray", names=levels(as.factor(germination_matrix$Species)))
 mtext("Species", 1, cex = 1.4, line = 2.5)
 mtext("Species mean", 2, cex = 1.4, line = 2.)
@@ -413,11 +434,11 @@ abline(h = 0, lty = 2)
 # source means (kappa2[src])
 ## NOTE: missing kappa2[NSources] due to sum-to-zero constraint
 ggplot(mapping=aes(x=levels(as.factor(germination_matrix$Source))[1:germData$NSources-1],
-                   ymin=summary_df[481:517, 1], # 2.5% percentile
-                   lower=summary_df[481:517, 2], # 25% percentile
-                   middle=summary_df[481:517, 3], # median
-                   upper=summary_df[481:517, 4], # 75% percentile
-                   ymax=summary_df[481:517, 5]))+ # 97.5% percentile
+                   ymin=summary_quantiles[(kappa1_end_index+1):kappa2_end_index, 1], # 2.5% percentile
+                   lower=summary_quantiles[(kappa1_end_index+1):kappa2_end_index, 2], # 25% percentile
+                   middle=summary_quantiles[(kappa1_end_index+1):kappa2_end_index, 3], # median
+                   upper=summary_quantiles[(kappa1_end_index+1):kappa2_end_index, 4], # 75% percentile
+                   ymax=summary_quantiles[(kappa1_end_index+1):kappa2_end_index, 5]))+ # 97.5% percentile
     geom_boxplot(stat="identity")+
     ggtitle("Kappa2 estimates: Mean source effects")+
     theme_classic()+
@@ -428,11 +449,11 @@ ggplot(mapping=aes(x=levels(as.factor(germination_matrix$Source))[1:germData$NSo
 #### kappa3 estimates ####
 # wp means
 ggplot(mapping=aes(x="WP=1",
-                   ymin=summary_df[518, 1], # 2.5% percentile
-                   lower=summary_df[518, 2], # 25% percentile
-                   middle=summary_df[518, 3], # median
-                   upper=summary_df[518, 4], # 75% percentile
-                   ymax=summary_df[518, 5]))+ # 97.5% percentile
+                   ymin=summary_quantiles[kappa3_index, 1], # 2.5% percentile
+                   lower=summary_quantiles[kappa3_index, 2], # 25% percentile
+                   middle=summary_quantiles[kappa3_index, 3], # median
+                   upper=summary_quantiles[kappa3_index, 4], # 75% percentile
+                   ymax=summary_quantiles[kappa3_index, 5]))+ # 97.5% percentile
     geom_boxplot(stat="identity")+
     ggtitle("Kappa3 estimate: Mean WP effect for wp=1")+
     theme_classic()+
@@ -443,11 +464,11 @@ ggplot(mapping=aes(x="WP=1",
 #### kappa4 estimates ####
 # temp means
 ggplot(mapping=aes(x=c("28-10", "32-15"),
-                   ymin=summary_df[519:520, 1], # 2.5% percentile
-                   lower=summary_df[519:520, 2], # 25% percentile
-                   middle=summary_df[519:520, 3], # median
-                   upper=summary_df[519:520, 4], # 75% percentile
-                   ymax=summary_df[519:520, 5]))+ # 97.5% percentile
+                   ymin=summary_quantiles[kappa4_index:(kappa4_index+1), 1], # 2.5% percentile
+                   lower=summary_quantiles[kappa4_index:(kappa4_index+1), 2], # 25% percentile
+                   middle=summary_quantiles[kappa4_index:(kappa4_index+1), 3], # median
+                   upper=summary_quantiles[kappa4_index:(kappa4_index+1), 4], # 75% percentile
+                   ymax=summary_quantiles[kappa4_index:(kappa4_index+1), 5]))+ # 97.5% percentile
     geom_boxplot(stat="identity")+
     ggtitle("Kappa4 estimates: Mean temp effects")+
     theme_classic()+
@@ -457,13 +478,12 @@ ggplot(mapping=aes(x=c("28-10", "32-15"),
 
 #### beta1 estimates: Species effects ####
 # BOMA over time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=1 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -476,13 +496,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 # DISP over time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=2 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -495,13 +514,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 # ELPA over time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=3 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -514,13 +532,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 # JUBA through time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=4 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -533,13 +550,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 # PHAU through time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=5 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -552,13 +568,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 # SCAC through time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=6 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -571,13 +586,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 # SCAM through time
-# set these based on data....
 timesteps=germData$NTimes # number of timesteps
 spp_level=7 # integer for species level
 # calculate indices for variables 
 total_steps <- 5*7
 index = seq(spp_level, total_steps, 7)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
+ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
                    ymin=summary$quantiles[index,1],
                    lower=summary$quantiles[index,2],
                    middle=summary$quantiles[index,3],
@@ -591,29 +605,45 @@ ggplot(mapping=aes(x=rownames(summary_df)[index],
 
 #### beta2 estimates: Source effects ####
 # beta2 estimates
-source_level=1
-timesteps=germData$NTimes
-start=36+source_level
-end=start+(38*timesteps)
-index=seq(start, end-1, 38)
-ggplot(mapping=aes(x=rownames(summary_df)[index],
-                   ymin=summary_df[index,1],
-                   lower=summary_df[index,2],
-                   middle=summary_df[index,3],
-                   upper=summary_df[index,4],
-                   ymax=summary_df[index,5]))+ 
-  geom_boxplot(stat="identity")+
-  ggtitle("Beta2 estimates: Source effects at t=0")+
-  theme(axis.text.x=element_text(angle=90))+
-  xlab("Source")
+for (source_level in 1:germData$NSources){
+  timesteps=germData$NTimes
+  start = beta1_end_index + source_level
+  index = seq(start, beta1_end_index, 38)
+  source_name = levels(as.factor(germination_matrix$Source))[source_level]
+  ggplot(mapping=aes(x=rownames(summary_quantiles)[index],
+                     ymin=summary_quantiles[index,1],
+                     lower=summary_quantiles[index,2],
+                     middle=summary_quantiles[index,3],
+                     upper=summary_quantiles[index,4],
+                     ymax=summary_quantiles[index,5]))+ 
+    geom_boxplot(stat="identity")+
+    ggtitle(paste("Beta2 estimates: Source effects for", source_name))+
+    theme(axis.text.x=element_text(angle=90))+
+    xlab("Source")
+}#for
+
+for (t in 1:germData$NTimes){
+  start = (beta1_end_index+1) + 38*(t-1)
+  end = start + (germData$NTimes-1)
+  ggplot(mapping=aes(x=rownames(summary_quantiles)[start:end],
+                     ymin=summary_quantiles[start:end,1],
+                     lower=summary_quantiles[start:end,2],
+                     middle=summary_quantiles[start:end,3],
+                     upper=summary_quantiles[start:end,4],
+                     ymax=summary_quantiles[start:end,5]))+
+    geom_bosplot(stat="identity")+
+    ggtitle(paste("Beta2 estimates: Source effects per timestep"))+
+    theme(axis.text.x=element_text(angle=90))+
+    xlab("Source")
+}#for
 
 #### beta3 estimates: WP ####
-ggplot(mapping=aes(x=rownames(summary_df)[226:235],
-                   ymin=summary_df[226:235,1],
-                   lower=summary_df[226:235,2],
-                   middle=summary_df[226:235,3],
-                   upper=summary_df[226:235,4],
-                   ymax=summary_df[226:235,5]))+ 
+ggplot(mapping=aes(x=rownames(summary_quantiles)[(beta2_end_index+1):beta3_end_index],
+                   ymin=summary_quantiles[(beta2_end_index+1):beta3_end_index,1],
+                   lower=summary_quantiles[(beta2_end_index+1):beta3_end_index,2],
+                   middle=summary_quantiles[(beta2_end_index+1):beta3_end_index,3],
+                   upper=summary_quantiles[(beta2_end_index+1):beta3_end_index,4],
+                   ymax=summary_quantiles[(beta2_end_index+1):beta3_end_index,5]))+ 
   geom_boxplot(stat="identity")+
   ggtitle("Beta3 estimates: Water potential effects")+
   theme(axis.text.x=element_text(angle=90))+
@@ -622,12 +652,12 @@ ggplot(mapping=aes(x=rownames(summary_df)[226:235],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 #### beta4 estimate: temp effect ####
-ggplot(mapping=aes(x=rownames(summary_df)[236:250],
-                   ymin=summary_df[236:250,1],
-                   lower=summary_df[236:250,2],
-                   middle=summary_df[236:250,3],
-                   upper=summary_df[236:250,4],
-                   ymax=summary_df[236:250,5]))+ 
+ggplot(mapping=aes(x=rownames(summary_quantiles)[(beta3_end_index+1):beta4_end_index],
+                   ymin=summary_quantiles[(beta3_end_index+1):beta4_end_index,1],
+                   lower=summary_quantiles[(beta3_end_index+1):beta4_end_index,2],
+                   middle=summary_quantiles[(beta3_end_index+1):beta4_end_index,3],
+                   upper=summary_quantiles[(beta3_end_index+1):beta4_end_index,4],
+                   ymax=summary_quantiles[(beta3_end_index+1):beta4_end_index,5]))+ 
   geom_boxplot(stat="identity")+
   ggtitle("Beta3 estimates: Water potential effects")+
   theme(axis.text.x=element_text(angle=90))+
@@ -636,23 +666,23 @@ ggplot(mapping=aes(x=rownames(summary_df)[236:250],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 #### beta5 estimate: seed mass ####
-ggplot(mapping=aes(x=rownames(summary_df)[251],
-                   ymin=summary_df[251,1],
-                   lower=summary_df[251,2],
-                   middle=summary_df[251,3],
-                   upper=summary_df[251,4],
-                   ymax=summary_df[251,5]))+ 
+ggplot(mapping=aes(x=rownames(summary_quantiles)[beta5_index],
+                   ymin=summary_quantiles[beta5_index,1],
+                   lower=summary_quantiles[beta5_index,2],
+                   middle=summary_quantiles[beta5_index,3],
+                   upper=summary_quantiles[beta5_index,4],
+                   ymax=summary_quantiles[beta5_index,5]))+ 
   geom_boxplot(stat="identity")+
   ggtitle("Beta5 estimates: Seed mass effect")+
   xlab("Beta5")
 
 #### beta6 estimates: cup effect #####
-ggplot(mapping=aes(x=rownames(summary$quantiles)[252:467],
-                   ymin=summary$quantiles[252:467,1],
-                   lower=summary$quantiles[252:467,2],
-                   middle=summary$quantiles[252:467,3],
-                   upper=summary$quantiles[252:467,4],
-                   ymax=summary$quantiles[252:467,5]))+ 
+ggplot(mapping=aes(x=rownames(summary$quantiles)[(beta5_index+1):beta6_end_index],
+                   ymin=summary$quantiles[(beta5_index+1):beta6_end_index,1],
+                   lower=summary$quantiles[(beta5_index+1):beta6_end_index,2],
+                   middle=summary$quantiles[(beta5_index+1):beta6_end_index,3],
+                   upper=summary$quantiles[(beta5_index+1):beta6_end_index,4],
+                   ymax=summary$quantiles[(beta5_index+1):beta6_end_index,5]))+ 
   geom_boxplot(stat="identity")+
   theme_classic()+
   theme(axis.text.x=element_text(angle=90))+
@@ -661,12 +691,12 @@ ggplot(mapping=aes(x=rownames(summary$quantiles)[252:467],
   xlab("Beta6")
 
 #### beta7 estimates: chamber effect #####
-ggplot(mapping=aes(x=rownames(summary_df)[468:470],
-                   ymin=summary_df[468:470,1],
-                   lower=summary_df[468:470,2],
-                   middle=summary_df[468:470,3],
-                   upper=summary_df[468:470,4],
-                   ymax=summary_df[468:470,5]))+ 
+ggplot(mapping=aes(x=rownames(summary_quantiles)[(beta6_end_index+1):beta7_end_index],
+                   ymin=summary_quantiles[(beta6_end_index+1):beta7_end_index,1],
+                   lower=summary_quantiles[(beta6_end_index+1):beta7_end_index,2],
+                   middle=summary_quantiles[(beta6_end_index+1):beta7_end_index,3],
+                   upper=summary_quantiles[(beta6_end_index+1):beta7_end_index,4],
+                   ymax=summary_quantiles[(beta6_end_index+1):beta7_end_index,5]))+ 
   geom_boxplot(stat="identity")+
   ggtitle("Beta7 estimates: Chamber effects")+
   theme(axis.text.x=element_text(angle=90))+
@@ -675,24 +705,24 @@ ggplot(mapping=aes(x=rownames(summary_df)[468:470],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 #### beta8 estimates: rep effect ####
-ggplot(mapping=aes(x=rownames(summary$quantiles)[...],
-                   ymin=summary$quantiles[:,1],
-                   lower=summary$quantiles[:,2],
-                   middle=summary$quantiles[:,3],
-                   upper=summary$quantiles[:,4],
-                   ymax=summary$quantiles[:,5]))+ 
+ggplot(mapping=aes(x=rownames(summary$quantiles)[(beta7_end_index-1):beta8_end_index],
+                   ymin=summary$quantiles[(beta7_end_index-1):beta8_end_index:,1],
+                   lower=summary$quantiles[(beta7_end_index-1):beta8_end_index:,2],
+                   middle=summary$quantiles[(beta7_end_index-1):beta8_end_index:,3],
+                   upper=summary$quantiles[(beta7_end_index-1):beta8_end_index:,4],
+                   ymax=summary$quantiles[(beta7_end_index-1):beta8_end_index:,5]))+ 
   geom_boxplot(stat="identity")+
   ggtitle("Beta8 estimates: Chamber effects")+
   xlab("Chamber * rep number")+
   theme_classic()
 
 #### beta9 estimates ####
-ggplot(mapping=aes(x=rownames(summary$quantiles)[471],
-                   ymin=summary$quantiles[471,1],
-                   lower=summary$quantiles[471,2],
-                   middle=summary$quantiles[471,3],
-                   upper=summary$quantiles[471,4],
-                   ymax=summary$quantiles[471,5]))+ 
+ggplot(mapping=aes(x=rownames(summary$quantiles)[beta9_index],
+                   ymin=summary$quantiles[beta9_index,1],
+                   lower=summary$quantiles[beta9_index,2],
+                   middle=summary$quantiles[beta9_index,3],
+                   upper=summary$quantiles[beta9_index,4],
+                   ymax=summary$quantiles[beta9_index,5]))+ 
   geom_boxplot(stat="identity")+
   ggtitle("Beta9 estimate: Day effect")+
   theme_classic()+
@@ -700,58 +730,104 @@ ggplot(mapping=aes(x=rownames(summary$quantiles)[471],
   geom_abline(aes(slope=0, intercept=0), col="red")
 
 #### Variance estimates #####
-# nu1 estimates
-ggplot(mapping=aes(x=rownames(summary$quantiles)[286],
-                   ymin=summary$quantiles[286,1],
-                   lower=summary$quantiles[286,2],
-                   middle=summary$quantiles[286,3],
-                   upper=summary$quantiles[286,4],
-                   ymax=summary$quantiles[286,5]))+ 
+# nu1 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[nu1_index],
+                   ymin=summary$quantiles[nu1_index,1],
+                   lower=summary$quantiles[nu1_index,2],
+                   middle=summary$quantiles[nu1_index,3],
+                   upper=summary$quantiles[nu1_index,4],
+                   ymax=summary$quantiles[nu1_index,5]))+ 
   geom_boxplot(stat="identity")+
-  ggtitle("Nu1: germ variation across species estimates")+
+  ggtitle("Nu1: variation across cups")+
   xlab("Nu1")
 
-# nu2 estimates
-ggplot(mapping=aes(x=rownames(summary$quantiles)[287],
-                   ymin=summary$quantiles[287,1],
-                   lower=summary$quantiles[287,2],
-                   middle=summary$quantiles[287,3],
-                   upper=summary$quantiles[287,4],
-                   ymax=summary$quantiles[287,5]))+ 
+# nu2 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[nu2_index],
+                   ymin=summary$quantiles[nu2_index,1],
+                   lower=summary$quantiles[nu2_index,2],
+                   middle=summary$quantiles[nu2_index,3],
+                   upper=summary$quantiles[nu2_index,4],
+                   ymax=summary$quantiles[nu2_index,5]))+ 
   geom_boxplot(stat="identity")+
-  ggtitle("Nu2: variation across source estimates")+
+  ggtitle("Nu2: variation across chambers")+
   xlab("Nu2")
-# nu4 estimates
-ggplot(mapping=aes(x=rownames(summary$quantiles)[288],
-                   ymin=summary$quantiles[288,1],
-                   lower=summary$quantiles[288,2],
-                   middle=summary$quantiles[288,3],
-                   upper=summary$quantiles[288,4],
-                   ymax=summary$quantiles[288,5]))+ 
-  geom_boxplot(stat="identity")+
-  ggtitle("Nu4: variation across temp estimates")+
-  xlab("Nu4")
-# nu7 estimates
-ggplot(mapping=aes(x=rownames(summary$quantiles)[289],
-                   ymin=summary$quantiles[289,1],
-                   lower=summary$quantiles[289,2],
-                   middle=summary$quantiles[289,3],
-                   upper=summary$quantiles[289,4],
-                   ymax=summary$quantiles[289,5]))+ 
-  geom_boxplot(stat="identity")+
-  ggtitle("Nu7: variation across cup estimates")+
-  xlab("Nu7")
-# nu8 estimates
-ggplot(mapping=aes(x=rownames(summary$quantiles)[290],
-                   ymin=summary$quantiles[290,1],
-                   lower=summary$quantiles[290,2],
-                   middle=summary$quantiles[290,3],
-                   upper=summary$quantiles[290,4],
-                   ymax=summary$quantiles[290,5]))+ 
-  geom_boxplot(stat="identity")+
-  ggtitle("Nu8: variation across chamber estimates")+
-  xlab("Nu8")
 
+# nu3 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[nu3_index],
+                   ymin=summary$quantiles[nu3_index,1],
+                   lower=summary$quantiles[nu3_index,2],
+                   middle=summary$quantiles[nu3_index,3],
+                   upper=summary$quantiles[nu3_index,4],
+                   ymax=summary$quantiles[nu3_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Nu3: variation across reps")+
+  xlab("Nu3")
+
+# sigma1 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[sigma1_index],
+                   ymin=summary$quantiles[sigma1_index,1],
+                   lower=summary$quantiles[sigma1_index,2],
+                   middle=summary$quantiles[sigma1_index,3],
+                   upper=summary$quantiles[sigma1_index,4],
+                   ymax=summary$quantiles[sigma1_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Sigma1: variation across overall species estimates")+
+  xlab("Sigma1")
+
+# sigma2 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[sigma2_index],
+                   ymin=summary$quantiles[sigma2_index,1],
+                   lower=summary$quantiles[sigma2_index,2],
+                   middle=summary$quantiles[sigma2_index,3],
+                   upper=summary$quantiles[sigma2_index,4],
+                   ymax=summary$quantiles[sigma2_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Sigma2: variation across overall source estimates")+
+  xlab("Sigma2")
+
+# tau1 estimates
+ggplot(mapping=aes(x=rownames(summary$quantiles)[(sigma2_index+1):tau1_end_index],
+                   ymin=summary$quantiles[(sigma2_index+1):tau1_end_index,1],
+                   lower=summary$quantiles[(sigma2_index+1):tau1_end_index,2],
+                   middle=summary$quantiles[(sigma2_index+1):tau1_end_index,3],
+                   upper=summary$quantiles[(sigma2_index+1):tau1_end_index,4],
+                   ymax=summary$quantiles[(sigma2_index+1):tau1_end_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Tau1: variation in species estimates over time")+
+  xlab("Tau1")
+
+# tau2 estimates
+ggplot(mapping=aes(x=rownames(summary$quantiles)[(tau1_end_index+1):tau2_end_index],
+                   ymin=summary$quantiles[(tau1_end_index+1):tau2_end_index,1],
+                   lower=summary$quantiles[(tau1_end_index+1):tau2_end_index,2],
+                   middle=summary$quantiles[(tau1_end_index+1):tau2_end_index,3],
+                   upper=summary$quantiles[(tau1_end_index+1):tau2_end_index,4],
+                   ymax=summary$quantiles[(tau1_end_index+1):tau2_end_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Tau2: variation in source estimates over time")+
+  xlab("Tau2")
+
+# tau3 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[tau3_index],
+                   ymin=summary$quantiles[tau3_index,1],
+                   lower=summary$quantiles[tau3_index,2],
+                   middle=summary$quantiles[tau3_index,3],
+                   upper=summary$quantiles[tau3_index,4],
+                   ymax=summary$quantiles[tau3_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Tau3: variation in WP2 estimates over time")+
+  xlab("Tau3")
+
+# tau4 estimate
+ggplot(mapping=aes(x=rownames(summary$quantiles)[(tau3_index+1):tau4_index],
+                   ymin=summary$quantiles[(tau3_index+1):tau4_index,1],
+                   lower=summary$quantiles[(tau3_index+1):tau4_index,2],
+                   middle=summary$quantiles[(tau3_index+1):tau4_index,3],
+                   upper=summary$quantiles[(tau3_index+1):tau4_index,4],
+                   ymax=summary$quantiles[(tau3_index+1):tau4_index,5]))+ 
+  geom_boxplot(stat="identity")+
+  ggtitle("Tau4: variation in Temp estimates over time")+
+  xlab("Tau4")
 
 ########################
 ### CROSS-VALIDATION ###
@@ -986,6 +1062,7 @@ source_name <- "KIWA"
 wp <- 1
 temp <- 3
 NSown <- 1000
+NTimes <- germData$NTimes
 seedmass_csv <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/SeedMass_FINAL_Processed.csv', header=TRUE)
 names(seedmass_csv)[1] <- "Source"
 
@@ -995,7 +1072,8 @@ sampled_rows <- sample(1:nrow(chains_merged), NSown, replace=TRUE)
 coeff_matrix <- chains_merged[sampled_rows,]
 
 ## set indices for betas based on # timesteps
-timesteps = germData$NTimes
+## NOTE: These will need to be updated if betas are added or removed!
+timesteps = NTimes
 beta1_end_index = timesteps * germData$NSpecies
 beta2_end_index = beta1_end_index + (timesteps*germData$NSources)
 beta3_end_index = beta2_end_index + (timesteps*2)
@@ -1007,9 +1085,9 @@ beta8_end_index = beta7_end_index + 3
 beta9_index = beta8_end_index + 1
 
 ## find parameter index for input parameters
-## NOTE: Check these using rownames(summary_df)[beta1_cols]
-beta1_cols <- seq(species, beta1_end_index, 7) # 238 for 34 timesteps
-beta2_cols <- seq(beta1_end_index+source, beta2_end_index, 38) # 1530 for 34 samples 
+## NOTE: Check these using rownames(summary_quantiles)[beta1_cols]
+beta1_cols <- seq(species, beta1_end_index, germData$NSpecies) # 238 for 34 timesteps
+beta2_cols <- seq(beta1_end_index+source, beta2_end_index, germData$NSources) # 1530 for 34 samples 
 beta3_cols <- seq(beta2_end_index+wp, beta3_end_index, 2) #1598 for 34 timesteps
 beta4_cols <- seq(beta3_end_index+temp, beta4_end_index, 3) #1700 for 34 timesteps
 seedmass <- mean(seedmass_csv$AvgSeedMass[which(seedmass_csv$Site==source_name)])
@@ -1028,12 +1106,12 @@ for (i in 1:NSown){
     beta2 <- coeff_matrix[i,beta2_cols[t]]
     beta3 <- coeff_matrix[i,beta3_cols[t]]
     beta4 <- coeff_matrix[i,beta4_cols[t]]
-    beta5 <- coeff_matrix[i,251]*seedmass
-    #beta6 <- coeff_matrix[i,1701+cups[i]]
-    #beta7 <- coeff_matrix[i,1917+chambers[i]]
-    #beta8 <- coeff_matrix[i,reps[i]]
-    #beta9 <- coeff_matrix[i,1921]*((t-1)*2)
-    linear <- beta1 + beta2 + beta3 + beta4 + beta5 #+ beta6 + beta7 + beta8 + beta9
+    beta5 <- coeff_matrix[i,beta5_index]*seedmass
+    beta6 <- coeff_matrix[i,beta5_index+cups[i]]
+    beta7 <- coeff_matrix[i,beta6_end_index+chambers[i]]
+    beta8 <- coeff_matrix[i,beta7_end_index+reps[i]]
+    beta9 <- coeff_matrix[i,beta9_index]*((t*2)-1)
+    linear <- beta1 + beta2 + beta3 + beta4 + beta5 + beta6 + beta7 + beta8 + beta9
     prob_sown[i,t] <- exp(linear) / (1+exp(linear))
   }
 }
@@ -1066,8 +1144,8 @@ real_means <- c()
 ones_count <- c()
 for (t in 1:germData$NTimes){
   ones_count[t] <- length(which(subset_df[,t]==1))
-  ifelse (t==0, # condition
-      num_inds_remaining <- NSown, # if true
+  ifelse (t==1, # condition
+      num_inds_remaining <- nrow(subset_df), # if true
       num_inds_remaining <- ones_count[t-1]) # if false
   real_means[t] <- ones_count[t] / num_inds_remaining
 }#t
@@ -1085,54 +1163,57 @@ source <- 10 # options restricted by species
 source_name <- "DIST"
 wp <- 1
 temp <- 2
-NSown <- 100
+NSown <- 1000
+NTimes <- germData$NTimes # number of timesteps
 seedmass_csv <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/SeedMass_FINAL_Processed.csv', header=TRUE)
 names(seedmass_csv)[1] <- "Source"
-
-# pull matrix of coefficients
-chains_merged <- rbind(out_model[[1]], out_model[[2]], out_model[[3]])
-sampled_rows <- sample(1:nrow(chains_merged), NSown, replace=TRUE)
-coeff_matrix <- chains_merged[sampled_rows,]
-
-# find parameter index for input parameters
-## NOTE: Check these using rownames(summary_df)[beta1_cols]
-beta1_cols <- seq(species, 238, 7)
-beta2_cols <- seq(238+source, 1530, 38)
-beta3_cols <- seq(1530+wp, 1598, 2)
-beta4_cols <- seq(1598+temp, 1700, 3)
 seedmass <- mean(seedmass_csv$AvgSeedMass[which(seedmass_csv$Site==source_name)])
-cups <- sample(1:germData$NCups, NSown, replace=TRUE)
-chambers <- sample(1:germData$NChambers, NSown, replace=TRUE)
-reps <- sample(1:3, NSown, replace=TRUE)
+
+## set indices for betas based on # timesteps
+## NOTE: These will need to be updated if betas are added or removed!
+timesteps = NTimes
+beta1_end_index = timesteps * germData$NSpecies
+beta2_end_index = beta1_end_index + (timesteps*germData$NSources)
+beta3_end_index = beta2_end_index + (timesteps*2)
+beta4_end_index = beta3_end_index + (timesteps*3)
+beta5_index = beta4_end_index + 1
+beta6_end_index = beta5_index + germData$NCups
+beta7_end_index = beta6_end_index + germData$NChambers
+beta8_end_index = beta7_end_index + 3
+beta9_index = beta8_end_index + 1
+
+# pull point estimates
+estimates <- summary(out_model)$statistics[,1]
+
+# find parameter estimates for input parameters
+## NOTE: These can be checked by calling the variable
+beta1_time <- estimates[seq(1, beta1_end_index, germData$NSpecies)]
+beta2_time <- estimates[seq(beta1_end_index+1, beta2_end_index, germData$NSources)]
+beta3_time <- estimates[seq(beta2_end_index+1, beta3_end_index, 2)]
+beta4_time <- estimates[seq(beta3_end_index+1, beta4_end_index, 3)]
+beta5 <- estimates[beta5_index]
+# betas 6-8 should have an average value of zero, so left out
+beta9 <- estimates[beta9_index]
 
 # set up matrix to hold transition probabilities
-prob_sown <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
+prob_sown <- matrix(NA, nrow=1, ncol=germData$NTimes)
   
 # simulate by timesteps for each individual
 # NOTE: Check indices by using "head(coeff_matrix[,beta1_cols], 1)"
-for (i in 1:NSown){
-  for (t in 1:germData$NTimes){
-    beta1 <- coeff_matrix[i,beta1_cols[t]]
-    beta2 <- coeff_matrix[i,beta2_cols[t]]
-    beta3 <- coeff_matrix[i,beta3_cols[t]]
-    beta4 <- coeff_matrix[i,beta4_cols[t]]
-    beta5 <- coeff_matrix[i,beta5_index]*seedmass
-    #beta6 <- coeff_matrix[i,1701+cups[i]]
-    #beta7 <- coeff_matrix[i,1917+chambers[i]]
-    #beta8 <- coeff_matrix[i,reps[i]]
-    #beta9 <- coeff_matrix[i,1921]*((t-1)*2)
-    linear <- beta1 + beta2 + beta3 + beta4 + beta5 #+ beta6 + beta7 + beta8 + beta9
-    prob_sown[i,t] <- exp(linear) / (1+exp(linear))
-  }
+for (t in 1:germData$NTimes){
+  beta1 <- beta1_time[t]
+  beta2 <- beta2_time[t]
+  beta3 <- beta3_time[t]
+  beta4 <- beta4_time[t]
+  beta5 <- beta5 * seedmass
+  beta9 <- beta9 * ((t*2)-1)
+  linear <- beta1 + beta2 + beta3 + beta4 + beta5 #+ beta6 + beta7 + beta8 + beta9
+  prob_sown[t] <- exp(linear) / (1+exp(linear))
 }
 
 # multiply transition probabilities through time
-germ <- matrix(NA, nrow=NSown, ncol=germData$NTimes)
-for (i in 1:NSown){
-  germ[i,1] <- rbinom(n=1, size=1, prob=prob_sown[i,1])
-  for (t in 2:germData$NTimes){
-    ifelse (germ[i,t-1]==0, #statement to test
-      germ[i,t] <- 0,  #if true
-      germ[i,t] <- rbinom(n=1, size=1, prob=prob_sown[i,t]))  #if false
-  }
+germ <- matrix(NA, nrow=1, ncol=germData$NTimes)
+germ[1] <- rbinom(n=1, size=NSown, prob=prob_sown[1])
+for (t in 2:germData$NTimes){
+  germ[1,t] <- rbinom(n=1, size=germ[t-1], prob=prob_sown[t])
 }
