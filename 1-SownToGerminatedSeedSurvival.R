@@ -182,7 +182,7 @@ germination_matrix <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegMo
 ## GOOD WEBSITE FOR NIMBLE TUTORIAL: https://r-nimble.org/html_manual/cha-lightning-intro.html
 
 # set up data
-GermData <- list(germ=germination_matrix[,5:10],
+germData <- list(germ=germination_matrix[,5:10],
                  species=as.integer(as.factor(germination_matrix$Species)), 
                  source=as.integer(as.factor(germination_matrix$Source)),
                  #htt=germination_matrix$HTT,
