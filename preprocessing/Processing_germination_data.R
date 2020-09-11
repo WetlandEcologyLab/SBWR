@@ -66,6 +66,8 @@ process_germ_data <- function(in_file){
     if (! i %in% cup_numbers){
       if (i %in% c(34, 76, 120, 144, 207, 221))
       {print(paste("WARNING: Cup number is missing from data set: #", as.character(i), "- Typha cup"))}
+      if (i %in% c(26, 79))
+      {print(paste("WARNING: Cup number is missing from data set: #", as.character(i), "- swapped cups (TRIAL 4 ONLY!)"))}
       else {print(paste("WARNING: Cup number is missing from data set: #", as.character(i)))}
     }#close if
   }#close for loop
@@ -80,7 +82,6 @@ process_germ_data <- function(in_file){
     germ[,i+6] <- as.numeric(germ[,i+6])
   }#end for loop
   
-  
   # calculate total germinations
   for (i in 1:nrow(germ)){
     germ_numeric <- germ[i,first_time_col:last_time_col]
@@ -89,9 +90,25 @@ process_germ_data <- function(in_file){
   }#end for loop
   
   # calculate mean germination rate
-  germ$GermProportion <- germ$TotalGerm / germ$NoSown
+  germ$GermProportion <- (germ$TotalGerm / germ$NoSown) * 100
   
-  # calculate germination synchrony
+  # calcualate mean germination time
+  timesteps <- last_time_col-first_time_col
+  # set number of days for each data collection data: sequence from 1, 3, 5, 7...
+  multipliers <- as.matrix(seq(from=1, to=(timesteps*2)+1, by=2),dim(37,1))
+  germ_days <- as.matrix(germ[,first_time_col:last_time_col])
+  germ_days[is.na(germ_days)] <- 0 #set NAs to zero
+  # matrix math: # of germinations multiplied by germination day, all summed together per cup
+  sum_days <- germ_days %*% multipliers
+  germ$MeanGermDay <- sum_days / germ$TotalGerm
+  
+  # calculate time to first germination
+  for (i in 1:nrow(germ)){
+    germ_count <- germ[i,first_time_col:last_time_col]
+    germ$FGT2[i] <- min(which(germ_count!=0),na.rm=T)
+    }#end for loop
+  
+  # calculate germination synchrony (in days)
   for (i in 1:nrow(germ)){
     # make list of germination days for cup
     germ_row <- germ[i,first_time_col:last_time_col]
@@ -104,19 +121,18 @@ process_germ_data <- function(in_file){
     # calculate percentiles
     q <- quantile(list, c(0.1,0.9))
     # synchrony: # days between when 10% and 90% of seeds have germinated
-    germ$GermSynch[i] <- q[2] - q[1]
+    germ$GermSynch.days[i] <- q[2] - q[1]
   }#end for loop
   
-  # calcualate mean germination time
-  timesteps <- last_time_col-first_time_col
-  # set number of days for each data collection data: sequence from 1, 3, 5, 7...
-  multipliers <- as.matrix(seq(from=1, to=(timesteps*2)+1, by=2),dim(37,1))
-  germ_days <- as.matrix(germ[,first_time_col:last_time_col])
-  germ_days[is.na(germ_days)] <- 0 #set NAs to zero
-  # matrix math: # of germinations multiplied by germination day, all summed together per cup
-  sum_days <- germ_days %*% multipliers
-  germ$MeanGermDay <- sum_days / germ$TotalGerm
-
-  # return dataframe
+  # calculate germination synchrony index (Z)
+  for (i in 1:nrow(germ)){
+    germ_count <- germ[i,first_time_col:last_time_col]
+    for (j in 1:length(germ_count)){
+      ifelse(is.na(germ_count[j]), germ_count[j]<-0, germ_count[j]<-germ_count[j])
+    }#end for loop
+    germ$Z[i] <- sum(germ_count*(germ_count-1)/2)/(sum(germ_count)*(sum(germ_count) - 1)/2)
+  }#end for loop
+  
+ # return dataframe
   return(germ)
 }#end function
