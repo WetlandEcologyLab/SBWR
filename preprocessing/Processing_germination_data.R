@@ -107,6 +107,10 @@ process_germ_data <- function(in_file){
     germ_count <- germ[i,first_time_col:last_time_col]
     germ$FGT2[i] <- min(which(germ_count!=0),na.rm=T)
     }#end for loop
+  # replace Inf with NA to account for cups with no germination
+  for (i in 1:length(germ$FGT2)){
+    if (germ$FGT2[i] == "Inf") germ$FGT2[i] = "NA"
+    }#end for loop
   
   # calculate germination synchrony (in days)
   for (i in 1:nrow(germ)){
