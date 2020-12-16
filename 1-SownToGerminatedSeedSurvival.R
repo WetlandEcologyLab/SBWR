@@ -176,10 +176,11 @@ textConnection("model{ # has the same effect as writing all this in a separate t
 # read in data- long format
 #data <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/DummyGerminationData_Trial3_23Apr20.csv',header=T,stringsAsFactors = FALSE)
 # read in data- matrix format
-germination_matrix <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/MatrixGermDataTrial3_28Apr_2020.csv', header=TRUE, stringsAsFactors=FALSE)
+germination_matrix <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/GerminationMatrix_FINAL_15DEC2020.csv', header=TRUE, stringsAsFactors=FALSE)
+head(germination_matrix)
 
 #### NIMBLE FORMAT ####
-## GOOD WEBSITE FOR NIMBLE TUTORIAL: https://r-nimble.org/html_manual/cha-lightning-intro.html
+{## GOOD WEBSITE FOR NIMBLE TUTORIAL: https://r-nimble.org/html_manual/cha-lightning-intro.html
 
 # set up data
 germData <- list(germ=germination_matrix[,5:10],
@@ -203,7 +204,7 @@ germData <- list(germ=germination_matrix[,5:10],
 # create model
 germModel <- nimbleModel(code = SownSurv,
                           name = "Survival to Germination",
-                          constants = GermData, # just like your usual jags.data
+                          constants = germData, # just like your usual jags.data
                           inits = 1000) # just like your usual inits function
 
 # check out model components
@@ -242,24 +243,25 @@ summary(samples_coda)
 gelman.diag(samples_coda)
 plot(samples_coda)
 
-
+}#group Nimble format
 
 #### JAGS FORMAT ####
 ## save data as appropriate list
-germData <- list(germ=germination_matrix[,1:34], 
+germData <- list(germ=germination_matrix[,7:43], 
                      species=as.integer(as.factor(germination_matrix$Species)),
                      source=as.integer(as.factor(germination_matrix$Source)), 
                      seedmass=germination_matrix$SeedMass, 
-                     #sct=germination_matrix$SeedMass, 
+                     #sct=germination_matrix$SCT, 
                      wp=germination_matrix$WP, 
                      temp=germination_matrix$Temp,
                      cup=as.integer(as.factor(germination_matrix$CupNo)), 
                      chamber=as.integer(as.factor(germination_matrix$Chamber)),
+                     rep=as.integer(as.factor(germination_matrix$Trial)),
                      NSown=nrow(germination_matrix),
                      NSpecies = length(unique(germination_matrix$Species)), 
                      NSources = length(unique(germination_matrix$Source)),
                      NCups = length(unique(germination_matrix$CupNo)),
-                     NTimes = 34,
+                     NTimes = 37,
                      NChambers = length(unique(germination_matrix$Chamber)))
 
 ## Initialize model
@@ -706,7 +708,7 @@ ggplot(mapping=aes(x=rownames(summary_quantiles)[(beta6_end_index+1):beta7_end_i
 
 #### beta8 estimates: rep effect ####
 ggplot(mapping=aes(x=rownames(summary$quantiles)[(beta7_end_index-1):beta8_end_index],
-                   ymin=summary$quantiles[(beta7_end_index-1):beta8_end_index:,1],
+                   ymin=summary$quantiles[(beta7_end_index-1):beta8_end_index:1],
                    lower=summary$quantiles[(beta7_end_index-1):beta8_end_index:,2],
                    middle=summary$quantiles[(beta7_end_index-1):beta8_end_index:,3],
                    upper=summary$quantiles[(beta7_end_index-1):beta8_end_index:,4],

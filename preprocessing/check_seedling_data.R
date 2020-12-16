@@ -6,10 +6,9 @@
 library(pracma)
 
 # specify file paths
-in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/ModelData/Processed_CSVs/Trial3_Germination_Processed.csv'
-lookup_file <- 'C:/Users/Maggie/Documents/WetlandEcology/ModelData/Processed_CSVs/Seedling_Lookup_Table_CupNos.csv'
-checked_file <-'C:/Users/Maggie/Documents/WetlandEcology/ModelData/Processed_CSVs/Trial3_Germination_Checked.csv'
-
+in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/GerminationData_FINAL_Processed_15DEC2020.csv'
+lookup_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/Seedling_Lookup_Table_CupNos.csv'
+checked_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/GerminationData_FINAL_Processed_Checked_15DEC2020.csv'
 # Run species and source categories check
 ## NOTE: This function assumes field names of 'Species','Source','WP', and 'Temp'
 ## It also assumes that 'WP' and 'Temp' are in numeric format

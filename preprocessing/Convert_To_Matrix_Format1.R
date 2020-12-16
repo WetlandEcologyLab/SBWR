@@ -3,15 +3,28 @@
 ### Sown to Germinated Seed Matrix         ##
 ### Model 1                                ##
 #############################################
-## read in data in long format
-data <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel//DummyData/DummyGerminationData_Trial3_23Apr20.csv', header=T, stringsAsFactors=F)
+## read in data in long TTE format
+data <- read.csv('C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/TimeToEvent_Germination_FINAL_15DEC2020.csv', header=T, stringsAsFactors=F)
+
+## fix trial field
+for (i in 1:nrow(data)){
+  if(data$CupNo[i]<=234) data$Trial <- 1
+  if(data$CupNo[i]>234 & data$CupNo[i]<=468) data$Trial[i] <- 2
+  if(data$CupNo[i]>468) data$Trial[i] <- 3
+}#for
+write.csv(data, 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/TimeToEvent_Germination_FINAL_15DEC2020.csv', row.names=FALSE)
+
+## TODO: Add "RawTime" field based on BeginTime and EndTime fields
+
 
 ## calculate total number of seeds
-n_seeds<- 0
-for (i in unique(data$Cup_No)){
-  cup_subset <- data[which(data$Cup_No==i & data$RawTime==0),]
-  n_seeds <- n_seeds+length(cup_subset$RawTime)
-}
+n_seeds <- sum()
+#n_seeds<- 0
+#for (i in unique(data$CupNo)){
+#  cup_subset <- data[which(data$CupNo==i & data$BeginTime==0),]
+#  n_seeds <- n_seeds+length(cup_subset$BeginTime)
+#}
+
 
 ## create blank matrices
 # ncol = length(unique(data$RawTime))
@@ -32,7 +45,7 @@ sct_matrix <- matrix(NA, nrow=n_seeds, ncol=1)
 ## populate matrices
 row=0
 for (i in 1:nrow(data)){
-  for (t in 1:34){
+  for (t in 1:37){
     time <- (t-1)*2
     if (data$RawTime[i]==time){
       if (time==0) {

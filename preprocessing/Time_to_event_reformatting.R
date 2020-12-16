@@ -10,8 +10,8 @@ library(timeDate)
 ####################################
 ## Run time to event reformatting ##
 ####################################
-in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/TestSeedlingData_Trial3Germ_17Apr2020.csv'
-out_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/TimeToEventGermination_Trial3_21Apr20.csv'
+in_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/GerminationData_FINAL_Processed_15DEC2020.csv'
+out_file <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs//TimeToEvent_Germination_FINAL_15DEC2020.csv'
 reformat_germ_TTE_data(in_file, out_file)
 
 ##############
@@ -26,7 +26,7 @@ reformat_germ_TTE_data <- function(in_file, out_file){
   #returns germination data formatted in time-to-event style for HTT model entry
   
   # read in original dataset and set standard names
-  germ_original <- read.csv(in_file, header=T, stringsAsFactors = F)
+  germ_original <- read.csv(in_file, header=T, stringsAsFactors=FALSE)
   
   # rename columns
   ncols = ncol(germ_original)
@@ -45,7 +45,7 @@ reformat_germ_TTE_data <- function(in_file, out_file){
   # Check that all cup numbers are represented
   tysp_numbers <- c(34, 76, 120, 144, 207, 221)
   cup_numbers <- germ_original$CupNo
-  for (i in 1:234){
+  for (i in 1:702){
     if (! i %in% cup_numbers){
       if (i %in% c(34, 76, 120, 144, 207, 221))
       {print(paste("WARNING: Cup number is missing from data set: #", as.character(i), "- Typha cup"))}
@@ -54,18 +54,18 @@ reformat_germ_TTE_data <- function(in_file, out_file){
   }#close for loop
     
   # set data types for each field
-  germ_original$CupNo <- as.factor(germ_original$CupNo)
-  germ_original$Species <- as.factor(germ_original$Species)
-  germ_original$Source <- as.factor(germ_original$Source)
-  germ_original$WP <- as.factor(germ_original$WP)
-  germ_original$Temp <- as.integer(germ_original$Temp)
-  germ_original$NoGermDate <- as.numeric(germ_original$NoGermDate)
+  germ_original$CupNo <- as.character(germ_original$CupNo)
+  germ_original$Species <- as.character(germ_original$Species)
+  germ_original$Source <- as.character(germ_original$Source)
+  germ_original$WP <- as.character(germ_original$WP)
+  germ_original$Temp <- as.character(germ_original$Temp)
+  germ_original$NoGermDate <- as.integer(germ_original$NoGermDate)
   germ_original$NoSown <- as.numeric(germ_original$NoSown)
-  germ_original$Trial <- as.factor(germ_original$Trial)
+  germ_original$Trial <- as.character(germ_original$Trial)
   
   # rename date fields based on timestep
   first_time_col <- 7
-  last_time_col <- ncols-2
+  last_time_col <- ncols-11
   for (i in 1:(last_time_col-first_time_col+1)){
     field_name <- paste("Time", as.character(i*2), sep="")
     names(germ_original)[i+6] <- field_name
@@ -75,22 +75,22 @@ reformat_germ_TTE_data <- function(in_file, out_file){
   # find the timeframe
   timesteps <- (last_time_col - first_time_col)
   # create new dataset and set column names
-  new_germ_df <- as.data.frame(matrix(NA, ncol=11, nrow=((timesteps+1)*234)))
-  names(new_germ_df) <- c("Trial", "CupNo", "Species", "Source", "Temp", "WP", "BeginTime", "EndTime", "NoGerm", "PropGerm", "CumPropGerm")
+  new_germ_df <- as.data.frame(matrix(NA, ncol=14, nrow=((timesteps+1)*702)))
+  names(new_germ_df) <- c("Trial", "CupNo", "Species", "Source", "Temp", "WP", "Chamber", "BeginTime", "EndTime", "SeedMass", "SCT", "NoGerm", "PropGerm", "CumPropGerm")
   # set beginning and end times for each interval
   new_germ_df$BeginTime <- rep(seq(0, timesteps*2, by=2), 234)
   new_germ_df$EndTime <- rep(seq(2, (timesteps*2)+2, by=2), 234)
   new_germ_df$EndTime[which(new_germ_df$EndTime==(timesteps*2)+2)] <- Inf
 
   # calculate total germinations
-  for (i in 1:nrow(germ)){
-    germ_numeric <- gsub("END", "", germ[i,first_time_col:last_time_col])
+  for (i in 1:nrow(germ_original)){
+    germ_numeric <- gsub("END", "", germ_original[i,first_time_col:last_time_col])
     suppressWarnings(germ_numeric <- as.numeric(germ_numeric))
-    germ$TotalGerm[i] <- sum(germ_numeric,na.rm=T) + germ$NoGermDate[i]
+    germ_original$TotalGerm[i] <- sum(germ_numeric,na.rm=T) + germ_original$NoGermDate[i]
   }#end for loop
   
   # copy over fields attached to cup numbers
-  for (i in 1:234){
+  for (i in 1:702){
     # get entry for cup number from original data frame
     cup_data <- germ_original[which(germ_original$CupNo==i),]
     # if cup_data not found, skip
@@ -115,6 +115,15 @@ reformat_germ_TTE_data <- function(in_file, out_file){
     # set temp
     cup_temp <- cup_data$Temp
     new_germ_df$Temp[start:end]  <- cup_temp
+    # set chamber
+    cup_chm <- cup_data$Chamber
+    new_germ_df$Chamber[start:end] <- cup_chm
+    # set seed mass
+    cup_seedmass <- cup_data$SeedMass
+    new_germ_df$SeedMass[start:end] <- cup_seedmass
+    # set sct
+    cup_sct <- cup_data$SCT
+    new_germ_df$SCT[start:end] <- cup_sct
     
     ## find and copy over germination number data for each cup number and time step
     # extract cup germ data from cup entry
@@ -136,7 +145,7 @@ reformat_germ_TTE_data <- function(in_file, out_file){
     new_germ_df$NoGerm[start:(new_row_end-1)] <- as.numeric(new_germ_df$NoGerm[start:(new_row_end-1)])
     for (j in start:(new_row_end-1)){
       if (is.na(new_germ_df$NoGerm[j])) new_germ_df$NoGerm[j] <- 0
-    }
+    }#for
     
     # set germ number to remaining seeds for end date
     new_germ_df$NoGerm[new_row_end] <- (cup_data$NoSown-cup_data$NoGermDate) - sum(as.data.frame(new_germ_df$NoGerm[start:(new_row_end-1)]),na.rm=T)
@@ -149,7 +158,7 @@ reformat_germ_TTE_data <- function(in_file, out_file){
   } # close of for loop
   
   ## CALCULATE CUMULATIVE PROPORTIONS
-  for (i in 1:234){
+  for (i in 1:702){
     # get start and end row for each cup
     start = (timesteps+1)*(i-1)+1
     end = (timesteps+1)*i
@@ -181,9 +190,11 @@ reformat_germ_TTE_data <- function(in_file, out_file){
   new_germ_df$CumPropGerm <- as.numeric(new_germ_df$CumPropGerm)
   
   # save new data frame to specified output file
-  write.csv(new_germ_df, out_file)
+  write.csv(new_germ_df, out_file, row.names = FALSE)
   
 # if you want the function to also return the data frame,
-# foer example for troubleshooting, uncomment the following line:
+# for example for troubleshooting, uncomment the following line:
   #return(new_germ_df) 
 } # end of function
+
+
