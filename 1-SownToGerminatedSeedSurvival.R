@@ -4,12 +4,11 @@
 
 #### SET FILE PATHS ####
 ## path to input germination matrix
-in_data_path <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/Processed_CSVs/GerminationMatrix_FINAL_15DEC2020.csv'
+in_data_path <- read.csv("./00_ModelData/01_Raw_Checked_Data/01_Seed_To_Germination_Model/FullGerminationData_FINAL.csv")
 ## folder to save outputs to
-output_folder <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/ModelData/03_Model_Output_Data/01_Seed_To_Germination_Model'
+output_folder <- './03_Model_Output_Data/01_Seed_To_Germination_Model'
 ## model name for output files
-model_name <- 'GermModel_03Apr2021'
-#data_long_path <- 'C:/Users/Maggie/Documents/WetlandEcology/RevegModel/DummyData/DummyGerminationData_Trial3_23Apr20.csv'
+model_name <- 'GermModel_01.2022'
 
 #### LOAD PACKAGES ####
 #rm(list=ls()) # cleanup
@@ -312,3 +311,6 @@ gelman.diag(samples_coda)
 plot(samples_coda)
 
 }#group Nimble format
+
+
+#test
